@@ -18,7 +18,7 @@ We'll also be supported in lab classes by three excellent tutors: Aislinn Keogh,
 
 ## Class times
 
-The course runs in semester 1. We have lectures 9am-9.50am on Mondays, and lab classes 9am-10.50am on Wednesdays **TBC**. There are also extra drop-in labs available in weeks 1-3 and in the run-up to the second assignment, see below.
+The course runs in semester 1. We have lectures 9am-9.50am on Mondays, and lab classes 9am-10.50am on Wednesdays **TBC**. There are also extra drop-in labs available in weeks 1-3 and in the run-up to the final assignment, see below.
 
 Lectures and labs are both essential to doing well on the course - the assessment involves an understanding both of the literature on online experiments (covered in the readings and lectures) and the practicalities of how to build them (covered in your own work on the practicals, with support available in the labs).
 
@@ -26,7 +26,7 @@ Lectures and labs are both essential to doing well on the course - the assessmen
 
 Lectures take place *in person* on Monday mornings, 9am-9.50am, in room S1, [7 George Square](https://www.ed.ac.uk/maps/maps?building=0209) - as far as I can work out, S indicates Second floor. Details for labs are TBC and will either be 9am-11am Wednesdays or (in a change to the current timetable) 9am-11am Thursdays. 
 
-Hopefully this goes without saying, but *do not come to lectures or tutorials if you are unwell or think you might be!* If you are unwell you can participate in lectures remotely, so you won't miss out and you'll be protecting the rest of us. Instructions on how to access live lecture streams/recordings are on the course page on Learn. If I am isolating or unwell (but still well enough lecture) we'll do the lecture remotely. There is no remote option for labs other than the drop-in labs listed below, but still don't turn up if you are unwell.
+Hopefully this goes without saying, but *do not come to lectures or labs if you are unwell or think you might be!* If you are unwell you can participate in lectures remotely, so you won't miss out and you'll be protecting the rest of us. Instructions on how to access live lecture streams/recordings are on the course page on Learn. If I am isolating or unwell (but still well enough lecture) we'll do the lecture remotely. There is no remote option for labs other than the drop-in labs listed below, but still don't turn up if you are unwell.
 
 ## Assessment
 
@@ -38,7 +38,7 @@ The undergraduate version of the course is worth 20 credits and there are two pi
 
 ### Postgraduate assessment
 
-The postgraduate version of the course is worth 10 credits and there is a single pieces of assessment, due on 7th December. This assessment is a project where you produce a working experiment implemented in jsPsych and an accompanying report explaining the motivation behind that experiment, justifying important design decisions you took in building the experiment, and appraising the experiment and ways it could be improved/extended. Full details will be provided in the postgraduate assignment brief, and [the FAQ](assessment/oels_assignment_faq.md) (which also features examples of good assignments). 
+The postgraduate version of the course is worth 10 credits and there is a single piece of assessment, due on 7th December. This assessment is a project where you produce a working experiment implemented in jsPsych and an accompanying report explaining the motivation behind that experiment, justifying important design decisions you took in building the experiment, and appraising the experiment and ways it could be improved/extended. Full details will be provided in the postgraduate assignment brief, and [the FAQ](assessment/oels_assignment_faq.md) (which also features examples of good assignments). 
 
 ## Course Materials
 
