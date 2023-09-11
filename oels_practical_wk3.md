@@ -24,13 +24,13 @@ The code makes some assumptions about where you will save it - you can change th
 
 The idea is that every week you will add a new subfolder to the `online_experiments_practicals` folder containing new code for a new experiment. 
 
-This code should run on your local computer (just open the `grammaticality_judgments.html` file in your browser) or you can upload it to the jspsychlearning server and play with it there, using the same sort of directory structure - it needs to be in `public_html`, e.g. if you have exactly the same directory structure on the server then the code would be in `public_html/online_experiments_practicals/grammaticality_judgments/`, and the URL for your experiment would be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/grammaticality_judgments/grammaticality_judgments.html (where UUN is your student number, s22... or whatever). 
+This code should run on your local computer (just open the `grammaticality_judgments.html` file in your browser) or you can upload it to the jspsychlearning server and play with it there, using the same sort of directory structure - it needs to be in `public_html`, e.g. if you have exactly the same directory structure on the server then the code would be in `public_html/online_experiments_practicals/grammaticality_judgments/`, and the URL for your experiment would be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/grammaticality_judgments/grammaticality_judgments.html (where UUN is your student number, s22... or whatever). Or you can go to https://jspsychlearning.ppls.ed.ac.uk/~UUN/ and navigate to your code there.
 
 First, get the code and run through it so you can check it runs, and you can see what it does. Then take a look at the HTML and js files in your code editor (we are recommending Visual Studio Code).
 
 ### Walk through the code
 
-`grammaticality_judgments.js` is probably one of the simplest types of experiments you could build. It has 4 grammaticality judgment trials, where participants provide a keypress response: y or n for "yes, this sentence could be spoken by a native speaker of English" or "no, it could not". Note that is slightly different from what Sprouse (2011) does - he asks people for a numerical response rather than a simple yes-no, we'll come to that later.
+This is probably one of the simplest types of experiments you could build. It has 4 grammaticality judgment trials, where participants provide a keypress response: y or n for "yes, this sentence could be spoken by a native speaker of English" or "no, it could not". Note that is slightly different from what Sprouse (2011) does - he asks people for a numerical response rather than a simple yes-no, we'll come to that later.
 
 There is also a little bit of wrapper around those 4 trials - a consent screen where participants click a button to give consent and proceed to the experiment, some information screens before the experiment proper starts, and then a final screen where you can display debrief information, completion codes etc to participants.
 
@@ -59,21 +59,6 @@ var jsPsych = initJsPsych({
   },
 });
 ```
-
-You might notice one small difference from the jsPsych "hello world" tutorial, which is that we say 
-
-```js
-var jsPsych = initJsPsych({
-  ...
-```
-
-whereas the tutorial says 
-```js
-const jsPsych = initJsPsych({
-  ...
-```
-
-i.e. it uses `const` where we use `var`. `var` and `const` are different ways of creating variables that store values that we can refer to elsewhere in the code. The only difference between them is that when you create a variable using `var` you are allowed to change its stored value elsewhere in the code if you want to, whereas `const` doesn't allow that (`const` stands for "constant"). That's a very sensible division of labour (and javascript actually introduces a 3rd possibility, `let`, which restricts how and when a variable's value can be changed). But for simplicity we are just going to use `var` everywhere - we don't want you worrying about whether `const` or `var` is the right choice so we will just use `var` when creating variables. We are just flagging this up here in case you see `const` or `let` in example code elsewhere and wonder what those are!
 
 The code then lays out the grammaticality judgment trials. Note that just because they come first in the javascript file (e.g. before the consent screen, which is later in the code) this doesn't mean they will be the first thing the participant sees - the experiment timeline controls what participants see when. 
 
