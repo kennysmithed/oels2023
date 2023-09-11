@@ -16,15 +16,15 @@ The course is co-taught by [Kenny Smith](http://www.lel.ed.ac.uk/~kenny/) and [A
 
 We'll also be supported in lab classes by three excellent tutors: Aislinn Keogh, Vilde Reksnes, and Maisy Hallam. 
 
-## Class times
+## Class times
 
-The course runs in semester 1. We have lectures 9am-9.50am on Mondays, and lab classes 9am-10.50am on Wednesdays **TBC**. There are also extra drop-in labs available in weeks 1-3 and in the run-up to the final assignment, see below.
+The course runs in semester 1. We have lectures 9am-9.50am on Mondays, and lab classes 9am-10.50am on **Thursdays** (note that this is a change to the original timetabled slot for lab classes). There are also extra drop-in labs available in weeks 1-3 and in the run-up to the final assignment, see below.
 
 Lectures and labs are both essential to doing well on the course - the assessment involves an understanding both of the literature on online experiments (covered in the readings and lectures) and the practicalities of how to build them (covered in your own work on the practicals, with support available in the labs).
 
 ### Arrangements for lectures and labs
 
-Lectures take place *in person* on Monday mornings, 9am-9.50am, in room S1, [7 George Square](https://www.ed.ac.uk/maps/maps?building=0209) - as far as I can work out, S indicates Second floor. Details for labs are TBC and will either be 9am-11am Wednesdays or (in a change to the current timetable) 9am-11am Thursdays. 
+Lectures take place on Monday mornings, 9am-9.50am, in room S1, [7 George Square](https://www.ed.ac.uk/maps/maps?building=0209) - as far as I can work out, S indicates Second floor. Labs are on Thursday mornings, 9am-10.50am, in room 4.02 [Appleton Tower](https://www.ed.ac.uk/maps/maps?building=0201) (PPLS Computing Lab). 
 
 Hopefully this goes without saying, but *do not come to lectures or labs if you are unwell or think you might be!* If you are unwell you can participate in lectures remotely, so you won't miss out and you'll be protecting the rest of us. Instructions on how to access live lecture streams/recordings are on the course page on Learn. If I am isolating or unwell (but still well enough lecture) we'll do the lecture remotely. There is no remote option for labs other than the drop-in labs listed below, but still don't turn up if you are unwell.
 
@@ -51,7 +51,7 @@ Each week there will be a set reading and a programming assignment. The reading 
 - *Scientific content:* minimal (but I'll go over the practicalities of the course, assessments etc)
 - *Technical content:* jsPsych basics
 - [Reading](oels_reading_wk1.md)
-- Programming task to appear here
+- [Programming task](oels_practical_wk1.md)
 - Lecture slides to appear here
 
 ### Week 2 (25th September): Crowdsourcing experimental data
@@ -59,7 +59,7 @@ Each week there will be a set reading and a programming assignment. The reading 
 - *Scientific content:* lab vs online data collection
 - *Technical content:* more jsPsych and javascript basics
 - [Reading](oels_reading_wk2.md)
-- Programming task to appear here
+- [Programming task](oels_practical_wk2.md)
 - Lecture slides to appear here
 
 ### Week 3 (2nd October): Grammaticality judgements
@@ -87,16 +87,16 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - *Scientific content:* probability matching and regularisation
 - *Technical content:* using trial data for contingent trials, saving data
 - [Reading](oels_reading_wk6.md)
-- [Programming task](oels_practical_wk6.md)
-- [Lecture slides](slides/oels_lecture_wk6.pdf)
+- Programming task to appear here
+- Lecture slides to appear here
 
 ### Week 7 (30th October): Audio stimuli
 
 - *Scientific content:* speech perception, social influences on phonetic adaptation
 - *Technical content:* Audio, trial data again, preloading stimuli, saving data trial by trial
 - [Reading](oels_reading_wk7.md)
-- [Programming task](oels_practical_wk7.md)
-- [Lecture slides](slides/oels_lecture_wk7.pdf)
+- Programming task to appear here
+- Lecture slides to appear here
 
 ### Week 8 (6th November): Priming and overspecification
 
@@ -140,7 +140,12 @@ I am sticking some extra documented experiments I have created here, in case the
 
 ### Additional drop-in labs
 
-Aislinn will be available on Teams in weeks 1-3 to do a short drop-in lab to catch people who joined the course late and missed the lab, or need a bit of extra support in the early stages of the course. *Times TBC*. See the course Learn page for instructions on how to access the drop-in labs on Teams. Note that these are not compulsory, and they are drop-ins not extra labs - the idea is that you come along, ask a couple of questions, then go away.
+Aislinn will be available on Teams in weeks 1-3 at the tikmes listed below to do a short drop-in lab to catch people who joined the course late and missed the lab, or need a bit of extra support in the early stages of the course. See the course Learn page for instructions on how to access the drop-in labs on Teams. Note that these are not compulsory, and they are drop-ins not extra labs - the idea is that you come along, ask a couple of questions, then go away.
+
+Aislinn will be available on Teams:
+- Thursday 21st September, 2pm-3pm
+- Thursday 28th September, 2pm-3pm
+- Thursday 5th October, 2pm-3pm
 
 We will provide some extra drop-in labs to give you an opportunity to get some help with your code for the final assignment. Obviously we won't write your code for you, but if you are having trouble interpreting an error message or finding a bug or want some tips on how to achieve a particular effect we can help you figure it out. Note that these are not compulsory, and they are drop-ins not extra labs - the idea is that you come along, ask a couple of questions, then go away. Dates and times TBC, but these will begin roughly 2 weeks before the final assessment is due.
 
