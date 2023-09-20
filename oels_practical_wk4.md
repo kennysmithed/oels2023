@@ -1,16 +1,16 @@
 ---
-title: Week 3 practical
+title: Week 4 practical
 description: Simple key- and button-press responses
 ---
 
-## The plan for week 3 practical
+## The plan for week 4 practical
 
 This week we are going to look at code for a simple grammaticality judgment experiment. Remember, the idea is that you can work through these practicals in the lab classes and, if necessary, in your own time - I recommend you use the lab classes as dedicated time to focus on the practicals, with on-tap support from the teaching team. 
 
 
 ## A grammaticality judgment experiment
 
-By this point you know enough of the basics of jsPsych and javascript to work with a simple experiment. We'd like you to download and run the code we provide, look at how the code works, and then attempt the exercises below, which involve editing the code in simple ways. Next week you'll get a chance to build the experiment yourself before looking at example code from us.
+By this point you know enough of the basics of jsPsych and javascript to work with a simple experiment. We'd like you to download and run the code we provide, look at how the code works, and then attempt the exercises below, which involve editing the code in simple ways. In the next practical class you'll get a chance to build the experiment yourself before looking at example code from us.
 
 ### Getting the code
 
@@ -153,7 +153,7 @@ Attempt these problems. After the practical you will be able to consult [some no
 
 You might have noticed that in `grammaticality_judgments.js` we quite laboriously lay out 4 judgment trials, all of which are identical in structure apart from the `stimulus` parameter. There are a couple of more efficient ways to do this, one of which is by using jsPsych timeline variables. If you'd like to see how that's done, download and inspect the file <a href="code/grammaticality_judgments/grammaticality_judgments_with_timeline_variables.js" download> grammaticality_judgments_with_timeline_variables.js</a>, stick it in your `grammaticality_judgments` folder, then see if you can get that to run by editing `grammaticality_judgments.html` so that it loads the timeline javascript file rather than the basic one (by editing line 9 of the html file).
 
-You might be wondering what the advantage is of using this slightly fancier code, and/or thinking "I could just copy and paste the judgment trials and edit them directly, isn't that simpler?". It maybe is conceptually simpler to copy and paste simple code, but it's also more error prone, since it relies on you not making any mistakes in copying, pasting and editing the same little block of code over and over again. In general, if you find yourself doing a lot of copying, pasting and editing when writing code it's a sign that you are doing something manually that the computer could do for you automatically, more quickly and with less chance of errors. We'll come back to that next week when we look at self-paced reading, where the "simple" manual approach would produce some really unwieldy code.
+You might be wondering what the advantage is of using this slightly fancier code, and/or thinking "I could just copy and paste the judgment trials and edit them directly, isn't that simpler?". It maybe is conceptually simpler to copy and paste simple code, but it's also more error prone, since it relies on you not making any mistakes in copying, pasting and editing the same little block of code over and over again. In general, if you find yourself doing a lot of copying, pasting and editing when writing code it's a sign that you are doing something manually that the computer could do for you automatically, more quickly and with less chance of errors. We'll come back to that in the next practical when we look at self-paced reading, where the "simple" manual approach would produce some really unwieldy code.
 
 
 ## Re-use
