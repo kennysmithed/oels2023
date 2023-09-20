@@ -1,555 +1,627 @@
 ---
-title: Week 9 practical
-description: looping trials, reading trial lists from CSVs again, PHP scripts for iteration
+title: Week 8 practical
+description: Audio recording, more randomisation stuff, custom preload lists, reading trial lists from CSV
 ---
 
-# The plan for week 9 practical
+# The plan for week 8 practical
 
-This week we are going to look at code for an iterated learning experiment, a simplified version of the experiment described in Beckner et al. (2017). 
+This week we are going to look at code for a confederate priming experiment based on the experiment described in Loy & Smith (2021) (and in fact using our stimuli). There's no new material to look at in the Online Experiments with jsPsych tutorial. The code we give you will record audio and save it to the server - you don't actually need to know how the audio recording code works, so you can treat that part as a black box, although the code is all commented up if you want to take a look. We are also going to add a few more bits and pieces involving randomisation (random participant IDs, random wait durations to simulate a human partner), we'll build a custom preload list to make sure our button images are preloaded before the experiment starts (using an alternative technique to the one used in the answer to one of the harder questions from last week), and finally I'll show how to load a trial list from a CSV file (handy if you want to use a pre-built trial list).
 
-In terms of the trial types we need to present to participants, this experiment is actually very simple, and uses elements of the code we developed in the practicals on word learning and perceptual learning.
-
-- Participants go through an initial observation phase where they are exposed to objects paired with labels/descriptions. This is basically identical to the observation phase of the word learning experiment in `word_learning.js`.
-- In the final test, where participants try to reproduce the language they are trained on, on each trial participants are presented with an object and asked to produce a label/description for it. Beckner et al. used a free-typing production method, where people type stuff in. In some recent work with online iterated learning we (my RA Clem Ashton and I) switched to a more constrained production model: participants are provided with a set of syllable options, and build complex labels by clicking on those syllable buttons. This reduces or removes the problem of participants typing English (e.g. "don't know", "no idea") or near-English versions of random labels (e.g. "vukano" -> "volcano"), which we were getting a lot of with free-typed responses on MTurk. We can achieve this by using the machinery for looping trials that jsPsych provides, looping a single `image-button-response` to allow a participant to click multiple times to build a label; in order to show that label on-screen where we want it, we'll actually use a customised version of `image-button-response` that has the prompt above the buttons rather than below. 
-
-The complication this week is that rather than pre-specifying the language participants have to learn, we are running an *iterated learning* design: the language produced by one participant in the production phase becomes the input language to another participant in the observation phase, allowing us to pass the language from person to person and watch it evolve. Participants are organised in *chains*, where the participant at generation *n* in a particular chain learns from the language produced by the generation *n-1* participant in that chain.
-
-There are a number of ways you could do iterated learning in an online experiment. You could do it entirely manually - you could wait until one participant has finished, get their data and convert it into a new input language that you manually add to the experiment code before releasing it for the next participant (but that sounds slow and labour-intensive!).  You could write a python server, a bit like the one we will use for dyadic interaction next week, that keeps track of which chains are running, which participants are in which chains, and then passes over the appropriate training data when a new participant starts the experiment. Or you could run a database on the server (in another language, SQL, designed for managing databases), that does the same kind of thing, keeping track of which chains are open, which participants are in which chain, and so on.
-
-Here we are going to go for a relatively low-tech but automatic approach, using CSV files on the server to store the languages participants produce, and then using PHP scripts (just like the ones we use for saving data) to write to those files, read from those files, and move files around to different folders. This hopefully means that we can get an iterated learning experiment up and running without any extra fancy bells and whistles, but without having to do anything manual ourselves in terms of passing languages from person to person. We already looked at reading CSV files from the server to build a trial list (in the confederate priming code), so some of the principles involved here are the same (e.g. using asynchronous functions to make javascript wait while PHP is off reading a file from the server) and some are slightly different (in this experiment all the files we are manipulating will be in `server_data`, which necessitates a slightly different technical approach). Again, like last week, I won't bother you with the contents of the technical infrastructure too much (the contents of the PHP scripts), and instead talk you through the code at a conceptual level, focussing on the jsPsych end of things.  
 
 # Acknowledgments
 
-The object stimuli for this week's experiment were provided by my colleague Dr Jennifer Culbertson, who uses slightly different variants of these images in several of her excellent papers on word order biases in noun phrase learning (e.g. [this paper in Cognition](https://doi.org/10.1016/j.cognition.2011.10.017)).
+I cobbled together some audio recording code for the online experiments in another confederate priming paper, Loy & Smith (2020), which we then used for Loy & Smith (2021); Annie Holz then jsPsych-ified it ([she has her own audio recording demo](https://experiments.ppls.ed.ac.uk/)), and I tweaked that code for this demo experiment.
 
-# An iterated learning experiment
+For this demo experiment we are using audio stims recorded by my RA Rachel Kindellan, who was the confederate in Loy & Smith (2021). The images are the ones we used in the experiments described in the paper.
 
-## Getting started
+# A confederate priming experiment
 
-**Important note:** This experiment requires a bit of careful set-up in your `server_data` folder on the jspsychlearning server, so don't just download it and start running it - read below for instructions on how to set everything up, otherwise the code will behave strangely and you'll be confused!
+## First: you build (some of) it!
 
-You need a bunch of files for this experiment - some html and js files, some images, and a bunch of php files. Download the following zip file and then uncompress it into your usual jspsych folder:
-- <a href="code/iterated_learning.zip" download> Download iterated_learning.zip</a>
+As with last week, we'd like to give you an opportunity to try to build (parts of) this experiment yourself, and we'll provide you with a template that we pre-built for you so you can focus on the more interesting parts of the experiment.
 
-This code won't work on your local computer, it needs to be on the jspsychlearning server - so once you have extracted the zip file, you need to upload the whole `iterated_learning` folder to your `public_html` folder on the jspsychlearning server, alongside your various other experiment folders.
+You need a bunch of files for this experiment - html and js files for several versions of the experiment, *two* php files (for saving CSV and audio data, and also reading in trial lists), plus various folders containing images, sounds, trial lists etc. Again, rather than downloading them individually, download the following zip file:
+- <a href="code/confederate_priming.zip" download> Download confederate_priming.zip</a>
 
-Finally, we need to set up some stuff in your `server_data` folder. Managing this iterated learning experiment means we need to keep track of several things. First, we want to record participant data trial-by-trial as it comes in, just like we always do. But we also need to keep track of which chains are available to iterate, which chains are currently being worked on by a participant, and which generations of which chains are completed and don't need to be messed with any more. We are going to manage that stuff by moving files from folder to folder in `server_data`, so we need to set up those directories, and also drop in some starting languages to initialise our chains.
-
-To do that, navigate into your `server_data` folder on cyberduck. You need to make sure that the folders you are creating inherit their access permissions etc from the main `server_data` folder, which you do by getting right into that folder on cyberduck before creating any new folders. Double-click the `server_data` folder so your navigation bar in cyberduck looks something like this (but with your UUN rather than mine obviously)
+As usual, extract this and copy the folder into your practicals folder on the jspsychlearning server - since data (including audio) won't save if you run it locally, by this point you really want to be at least testing everything on the server. Furthermore, there are a couple of things to note before you can run our implementation of the code:
+- Our code will save audio files to a subfolder of `server_data` called `audio` - so you need to create that subfolder. You can create new folders in cyberduck quite easily, but you have to create this new folder in exactly the right way to make sure the folder permissions (rules about who can write to the folder) are set correctly, otherwise your audio won't save. Go to your `server_data` folder in cyberduck and go into the folder (i.e. double-click it) so your cyberduck window looks like this - note that my navigation bar shows me I am in `/home/ksmith7/server_data`, yours will show you as in `/home/UUN/server_data` depending on what your UUN is.
 ![cyberduck in server_data](images/create_audio_folder.png)
+Then click the "action" button (with the cog), select the "New folder..." option and call the new folder `audio` (with that exact name, i.e. lower-case first letter). That should create a folder in the correct place with the correct permissions!
+- You may need to use Chrome for the audio recording to work reliably - feel free to try out other browsers, but if the audio recording doesn't work, try it in Chrome first before seeking our help!
 
-Once you are there, create a new folder (Action ... New folder in cyberduck) and call that folder `il` (short for iterated learning). Then double-click to enter the `il` folder, and create *four* new folders in there, called `ready_to_iterate`, `undergoing_iteration`, `completed_iteration` and `participant_data`. Here's what my server_data folder looks like after that step - you can see the `il` directory with the 4 sub-directories. Note that you have to get the folder names exactly right, otherwise the code won't be able to find the stuff it needs.
+If your directory structure is as I have been using so far, where all the exercises are in a folder called `online_experiments_practicals`, then the url for your implementation will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/confederate_priming/my_confederate_priming.html and the URL for the final implementation will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/confederate_priming/confederate_priming.html
 
-![il directory structure](images/il_detailed_directory_structure.png)
+If you run through our implementation of the experiment you'll see that the experiment consists of two trial types, which alternate:
 
-We are going to use `participant_data` folder to save our trial-by-trial data like we usually do; the other 3 folders will be used to keep track of the state of each iterated learning chain.
+- Picture selection trials, where participants hear audio from their partner (in fact, pre-recorded audio from our confederate) and select the matching picture from an array of 2 pictures.
+- Picture description trials, where participants see two pictures side by side and produce a a description for one of them (the target) for their partner, clicking a mic icon to start and stop recording.
 
-Finally, we need to make some initial (generation 0) languages available. If you look in the `iterated_learning` directory you got from the zip you downloaded, there's a sub-folder called `initial_languages_for_server_data`, containing two CSV files called `chain1_g0.csv` and `chain2_g0.csv`. Grab those and put them in the `ready_to_iterate` folder you just created in `server_data/il/` - these are random languages that will serve as the starting point for two iterated learning chains.
+We are interested in whether, on critical trials featuring an opportunity to produce an unnecessary colour word, the descriptions produced by the confederate (which consistently overspecify or avoid overspecifying) influences the descriptions the participant produces.
 
-Once you've done that, your `server_data` folder looks like this, and you are ready to go!
+Implementing something like this in full involves some technical steps you haven't seen yet, in particular recording audio and displaying stimuli which consist of pairs of images. jsPsych actually provides some plugins for audio responses but we prefer not to use them (we have our own code that we prefer). So instead of trying to implement this experiment in full, recording audio and all, feel free to see if you can get something that looks along the right lines (hearing the confederate speak and selecting from two pictures; seeing a picture and clicking a mic button) without worrying about the behind-the-scenes stuff with the audio recording at this point. And if you'd rather just jump to our implementation to see how we do it, that's fine.
 
-![il directory structure with initial languages](images/il_detailed_directory_structure_plus_g0.png)
+The sound files and images you will want to play around with are in the `sounds` and `images` folders that you get in the zip file. Note that the audio and image files have quite abstract names - this was something that Jia came up with that made it easy for her to manage a large list of image files. You can look in the images and sounds folders to work this out, but to help you:
 
-If your directory structure is as I have been using so far, where all the exercises are in a folder called `online_experiments_practicals`, then the URL for the final implementation will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/iterated_learning/iterated_learning.html
+For images:
 
-If you run through our implementation of the experiment you'll see that the experiment consists of two trial types: a block of observation trials (where the participant sees a picture plus label) and then a block of production trials (the participant sees an image, produces a label). 
+Faces: "f_fr1" is **f**emale face, **fr**ightened emotion, face number **1** (we have several faces for each emotion); "f_ha2" is happy female face number 2. Male faces start with "m_" rather than "f_" - e.g. "m_fr3" would be frightened male face number 3.
 
-## You build (some of) it, if you want
+Fruit and veg: these are named "frv1" (apple) through to "frv16" (watermelon).
 
-We are getting pretty advanced now, so I don't expect you to be able to implement this experiment from scratch yourself! But if you want to have a go at coding up the observation trials, or thinking about how you can do some kind of production trial, go for it. But if you just want to see how we did it, and attempt the exercises at the end, that's OK too.
+Animals: these are named "ani1" (camel) through to "ani16" (zebra).
+
+Garments: These are one of our two sets of critical items which differ in colour. "g4_c1" is garment 4 (a sock) in colour 1 (red); "g2_c3" is garment 2 (a glove) in colour 3 (green).
+
+Kitchen items: This is our other set of critical items. "k1_c1" is kitchen item 1 (a bowl) in colour 1 (red); "g2_c2" is kitchen item 2 (a fork) in colour 2 (blue).
+
+For sounds:
+
+The sound files are all matched to the image files of the same name - e.g. the image file "g4_c1" has some corresponding sound files whose name starts with "g4_c1" where Rachel (our confederate) says "the red sock". But to inject a bit of variation and make it less obvious these are pre-recorded, we have several versions of some sound files - e.g. there are two recordings of Rachel saying "the red sock", which are named "g4_c1_1" and "g4_c1_2". We also have sound files with just the bare noun (e.g. "the sock" rather than "the red sock"), e.g. "g4_1" and "g4_2" are Rachel saying "the sock" a couple of different ways. 
 
 ## Our implementation
 
-### Managing an iterated learning experiment via PHP scripts
+There are actually two implementations of the experiment included in the zip file for you:
+- A short version with a small number of trials. The code for this is in `confederate_priming.html` and `confederate_priming.js`, and the URL will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/confederate_priming/confederate_priming.html if your directory structure is as suggested in previous weeks. This is the code I will start with in the explanation below.
+- A full-length version with a large number of trials (100+). The code for this is in `confederate_priming_readfromcsv.html` and `confederate_priming_readfromcsv.js`, and the URL should be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/confederate_priming/confederate_priming_readfromcsv.html. If you want a longer demo you can run this, but the main purpose of including the second version is to show you how a long trial list can be read in from a CSV file.
 
-In an iterated learning experiment, one participant's output becomes the input for another participant. Participants are organised in chains, and you'll typically have several chains open at once ("open" means that you need to add more participants to those chains to get them to the desired number of generations). There are three main kinds of events you have to handle:
-1. When a new participant starts the experiment, you have to allocate them to an open chain (or deal with them some other way if there are no chains open), and avoid allocating any other new participants to the same chain until they are finished (i.e. there's no point in having two participants both competing to be generation 3 of chain 2 or whatever).
-2. When a participant completes the experiment, you need to make their output language available as the input language for the next participant in their chain.
-3. If a participant drops out (which happens *a lot* online) you need to recycle the chain that was allocated to them, making it available to another participant.
+Picture selection trials in our implementation work in essentially the same way as picture selection trials in the perceptual learning experiment, using the `audio-button-response` plugin. Picture description trials are a series of `html-button-response` trials (with the participant clicking on a mic button to start and stop recording), with some additional infrastructure to handle recording audio. Picture description trials involve presenting two side-by-side images, one highlighted with a green box, and it turns out it is easier to do this using the `html-button-response` plugin than it is using the `image-button-response` plugin - this is explained below!
 
-As I mentioned above, there are a bunch of ways you could do this, but here I've gone for a relatively simple solution. We will store input languages as CSV files on the jspsychlearning server. Those input language files will contain a list of object-label pairs which we can easily read in to create training for a participant, or write out based on what a participant does during production testing. The file name will give the chain number and generation number - so for instance, the file `chain1_g0.csv` is the language of generation 0 (i.e. the initial language) for chain 1, and the top of that file looks like this:
-```
-object,label
-images/o1_cB_n1.png,visivu
-images/o1_cB_n2.png,kotisu
-images/o1_cB_n3.png,vovaso
-images/o2_cB_n1.png,kukati
-```
-You can see that this is a CSV (comma-separated) file with two columns; the object column is just the name of one of our stimulus images and the label column is a label for that object. Note that the image files have structured names too - the code doesn't care about that, but each image file specifies an object shape (o1, o2 or o3), a colour (cB, cG or cO for colour blue, green and orange respectively), and a number (n1, n2 or n3, for 1, 2 or 3 objects in the image).
+We also simulate the confederate preparing to speak and making a selection based on the participant's productions by inserting variable-duration delays at appropriate points. The full experiment also included disfluencies etc (you can see some of the sound files for those if you go digging in the `sounds` folder) but we'll keep it simple here.
 
-Reading from and writing to these CSV files provides a simple way to pass a language from participant to participant - we read in the language from a CSV file to create training data, then when the participant completes the production phase we can write a new language file capturing their language, which can be read in by the next participant in the chain. You should already be familiar with the idea that we can write to CSV files using PHP - that's what we have been doing every time we save a participant's trial data. You have also seen one example of reading in a CSV and creating a trial list, in the confederate priming practical last week.
+The code therefore uses plugins you are already familiar with - the main new addition to the code is some functions which record audio, but you don't actually need to know how this works (although the code is there for you to look if you are interested), and a bit of trickery to get two images displayed side by side as a stimulus (which is actually quite easy).
 
-We also need a way to keep track of which chains are open, which are in progress etc. We'll do this by moving files among the various sub-directories you created in `server_data/il`.
+### Loading the code for recording audio
 
-Any files in the `ready_to_iterate` folder indicate chains that are ready to iterate - these are available to be allocated to a new participant who loads the experiment. Once we allocate a given generation of a given chain to a new participant (event 1 of the 3 events above), we move the input language CSV file to the `undergoing_iteration` folder - that stops it being allocated to anyone else while our participant is working on it.
-
-If the participant completes the experiment (event 2 above) then we take their production output and write it as a new CSV file in `ready_to_iterate`, making it available for the next participant in the chain (and updating the generation number - e.g. if we train someone on the language in `chain1_g0.csv`, we write the language they produce to `chain1_g1.csv`). We also move their input language file out of `undergoing_iteration` and into `completed_iteration`. That's mainly to keep it nice and clear which generations of which chains are currently being worked on and which are complete - you can look at the various folders on `server_data/il/` and immediately see which chains are running, which are waiting for new participants, and which are done.
-
-Finally, if our participant drops out (event 3 above), we just move the input language file they were working on back from `undergoing_iteration` to the `ready_to_iterate` folder - that makes it available again, and prevents drop-out participants clogging up our chains. Conveniently jsPsych provides a way of handling participant dropouts, allowing you to run a function to do stuff when the participant closes their browser window before completing the experiment.
-
-All of these various actions are carried out by PHP scripts, which we can call from our jsPsych experiment. `list_input_languages.php` returns a list of files in the `ready_to_iterate` folder back to the jsPsych experiment, which we can use to figure out which chains are open and then pick a random chain for our new participant. `load_input_language.php` reads in a specific language file and sends it back to jsPsych in a usable format (note that this is slightly different from how we were reading in CSV files in the confederate priming code; now we are doing the reading in PHP, in the confederate priming code I was doing it in the javascript). We can use `save_data.php` to write participant's output languages (as well as saving participants' trial-by-trial data to the `participant_data` folder). And `move_input_language.php` handles the process of shuffling CSV files back and forth between our various directories. All the javascript code that interfaces with these PHP scripts is in a separate javascript file, `manage_language_files.js` - you can look at the details if you want, but you don't have to, you can treat that as a black box that just carries out a specific set of operations for you.
-
-### Digging in to the code: updating our save_data function
-
-Now you (hopefully) get the general idea, we can have a look at some more detailed aspects of the code. The first thing to flag up is that I have changed the `save_data.php` script a bit, and also changed the `save_data` function in the javascript code, to make it a bit more general. In the older version of our `save_data.php` it was hard-wired to write to the top-level `server_data` folder; for the new experiment we want to save stuff to two different sub-folders of `server-data/il` (saving participant data to `server-data/il/participant_data` and output languages to `server-data/il/ready_to_iterate`), and we really don't want to have to write two different PHP scripts which are trivially different from each other just to handle that.
-
-The solution is to make the `save_data.php` and `save_data` javascript functions a bit more general - we pass in information about which directory to save the data in (which avoids us having to create different PHP scripts for saving in slightly different directories). The new more general code looks like this:
-
-```js
-function save_data(directory, filename, data) {
-  var url = "save_data.php";
-  var data_to_send = {
-    directory: directory,
-    filename: filename,
-    filedata: data,
-  };
-  fetch(url, {
-    method: "POST",
-    body: JSON.stringify(data_to_send),
-    headers: new Headers({
-      "Content-Type": "application/json",
-    }),
-  });
-}
-```
-
-In particular, we now pass more complex information over to the PHP script (in `data_to_send`) - not just the filename and data, but also the directory to save in. The other stuff (the fetch command, the JSON stuff, etc) is the same as the old version, and you don't have to worry about those details.
-
-Our `save_iterated_learning_data` function (which is the next bit in the code) then uses this new `save_data` function to save participant trial-by-trial data to the `participant_data` folder. But we'll also use the same `save_data` function to write final output languages to the `ready_for_iteration` folder too.
-
-### Calling PHP scripts to do various things with input language files
-
-There's a separate javascript file, `manage_language_files.js`, that sets out 4 functions which do all our manipulation of language CSV files for us. You need to know roughly what they do to understand the rest of the code, but you don't have to know the details (unless you want to, in which case you can look at the code and comments in `manage_language_files.js`). The first two functions, `list_input_languages` and `read_input_language`, have the same structure - they use `fetch` to run a PHP script on the server, and then receive back a response from the PHP script, which they do a little formatting on (to turn the data into something we can work with). Because these functions interact with a PHP script which is reading data files on the server, we have to set them up as `async` (asynchronous) functions, and tell them to `await` the response from the PHP server before doing anything. I mentioned this async/await stuff briefly at the end of the confederate priming practical, but to recap: fetching data from the server via PHP takes some time - only a fraction of a second, so it appears instantaneous to us, but for the computer this is very slow. Rather than wait for the `fetch` command to finish, your browser tries to press on and run the rest of the code - if you are familiar with 'normal' programming languages like python, that run things one step at a time, this is a very weird behaviour that takes some time to get used to! In this particular case, trying to carry on while the `fetch` function goes off and does its job is a bad idea, since we actually need to get the response back from the PHP script before we can continue - running off ahead before the `fetch` returns the data we need will cause our code to break, because until the `fetch` command returns its data we can't actually process it!
-
-There are various solutions to this problem, but I think the simplest one is to use the `async` and `await` functions (which are part of newer versions of javascript). This allows us to declare some functions as `async` (i.e. asynchronous, in other words there are some steps that involve waiting for one function to complete before proceeding, rather than running everything synchronously/simultaneously), and then use `await` to tell the browser to wait for a certain operation to complete before moving on. This means we can wait until the `fetch` command has done its job and got the data we need.
-
-If we call `list_input_languages()` what eventually gets returned is a list of the CSV files in the `server_data/il/ready_to_iterate` folder. When we call `read_input_language(input_language_filename)`, we tell it specifically which CSV file to read from the `ready_to_iterate` folder and it eventually gives us back a nice javascript representation of the contents of the file, in the form of a list of javascript objects - so the first few rows of `chain1_g0.csv` I showed you above would be read in as:
-```js
-[
-  {object:'images/o1_cB_n1.png',label:'visivu'},
-{object:'images/o1_cB_n2.png',label:'kotisu'},
-{object:'images/o1_cB_n3.png',label:'vovaso'},
-{object:'images/o2_cB_n1.png',label:'kukati'}
-]
-```
-We can then use this list of object-label pairs to build training and testing timelines.
-
-The third function in that separate file, `move_input_language`, basically follows the same idea - we bundle up some info and ask a PHP script to do a job for us. `move_input_language(input_language_filename,from_folder,to_folder)` moves `input_language_filename` from `from_folder` to `to_folder`! Finally, `save_output_language(object_label_list)` is called when a participant completes the production phase, and we use it to save their set of object-label pairs (which we build during the production phase) to a new file in `server_data/il/ready_to_iterate`.
-
-`object_label_list` is in the same format we end up with when we read in a language from an input language file, i.e. something like this:
-
-```js
-[
-{object:'images/o1_cB_n1.png',label:'visivu'},
-{object:'images/o1_cB_n2.png',label:'kotisu'},
-{object:'images/o1_cB_n3.png',label:'vovaso'},
-{object:'images/o2_cB_n1.png',label:'kukati'}
-]
-```
-
-### Observation and production trials
-
-We need to define a function to build observation trials (where the participant sees a picture plus label) and production trials (the participant sees an image, produces a label). Observation trials are based on the code from the practical on word learning, so I won't go over it in detail here. We will take a look at production trials though, because there are a couple of things to note.
-
-First, since we are providing participants with a limited set of syllables to build labels from, we need to list the syllables they can use.
-
-```js
-var available_syllables = jsPsych.randomization.shuffle([
-  "ti",
-  "ta",
-  "to",
-  "tu",
-  "ki",
-  "ka",
-  "ko",
-  "ku",
-  "si",
-  "sa",
-  "so",
-  "su",
-  "vi",
-  "va",
-  "vo",
-  "vu",
-]);
-```
-
-Notice that I am shuffling the list of syllables once, at the point at which the experiment loads: this means that in production trials the syllables will appear on-screen in random order, but that order will be consistent throughout the experiment. Shuffling the syllables every trial would be an option, but that makes it very hard work for the participant, who has to hunt for the syllable they want in a different place on every trial.
-
-Second, we need to keep track of the labels the participant produces as they work through the production phase, so that if/when they complete the production phase, we can save their final language to use as input for another participant. We will store their building list of productions to `participant_final_label_set`, which is initially just an empty list.
-```js
-var participant_final_label_set = [];
-```
-
-Finally, we define a function, `make_production_trial`, which takes an `object_filename` (e.g. `images/o1_cG_n2.png`) and creates a production trial for that object. This is conceptually quite similar to the production trials in the word learning experiment earlier in the course - the participant sees an image and clicks on a label, so that provides a good starting point for thinking about how to build this kind of trial. The difference is that in the word learning experiment the participant only had to click once - here we need them to click several times, to build a label syllable by syllable. And we can't just pre-specify that they need to click e.g. 3 times to build a 3-syllable label - we want the participants to have the freedom to make the labels as short or long as they like. 
-
-The solution is to have a trial that *loops* until the participant indicates they are done building the label, at which point we exit the loop and move on to the next trial. jsPsych provides some tools for looping - any trial can have a `loop_function` parameter that tells it if a trial should loop - but since this is slightly complicated I will build up the production trial step by step.
-
-Here's where we could start, with a one-click production trial based closely on the production trial from our word learning experiment:
-
-```js
-function make_production_trial(object_filename) {
-  
-  //add the DELETE and DONE buttons to the syllables
-  var buttons = available_syllables.concat(["DELETE", "DONE"]);
-
-  //define what a single production trial looks like - this will loop
-  var single_production_trial = {
-    type: jsPsychImageButtonResponse,
-    stimulus: object_filename,
-    stimulus_height: 150,
-    choices: buttons,
-    on_finish: function (data) {
-      //figure out what button they clicked using buttons and data.response
-      var button_pressed = buttons[data.response];
-      data.label = button_pressed;
-      data.block = "production"; //mark it as production data
-      participant_final_label_set.push({object:object_filename,label:data.label}); //add this object-label pair to participant_final_label_set
-      save_iterated_learning_data(data); //save the data (which will include the built label)
-    }
-  };
-  return single_production_trial;
-}
-```
-Hopefully that makes sense - it's just an `image-button-response` trial, the buttons the participant has available are `available_syllables` plus buttons labelled DELETE and DONE (which we will need later), and when the trial finishes we save the participant's data, both to their data file but also adding to `participant_final_label_set`, recording which label they produced for this object so we can record their final language for eventual iteration. 
-
-This will work for a single-click trial but doesn't allow the participant to select multiple labels. To do that we need to loop. [You can read the jsPsych documentation on looping](https://www.jspsych.org/7.3/overview/timeline/#looping-timelines). The relevant part is at the top: "Any timeline can be looped using the `loop_function` option. The loop function should be a function that evaluates to true if the timeline should repeat, and false if the timeline should end." They also provide a very handy example, which is where I started when coding this myself. So we want our `single_production_trial` to loop until the participant clicks DONE. Following the example in the jsPsych documentation, we can achieve this by making a wrapper trial with a timeline consisting of `single_production_trial`, which decides to loop or not based on whether the participant just clicked DONE (in which case we want to stop looping) or not (in which case we can continue looping). That wrapper trial looks something like this:
-
-```js
-var production_loop = {
-    timeline: [single_production_trial],
-    loop_function: function () {
-      //return true if we want to continue looping otherwise return false to stop looping
-    },
-  };
-```
-
-We can combine that together with our definition of `single_production_trial` to get close to what we want. The one thing we have to figure out is how to check whether the participant clicked DONE, and if so how to pass that information to the loop_function in the wrapper trial. There are several ways you could do this, but I decided to do it by creating a new variable, `continue_production_loop`, which is set to `true` at the start of the production loop; then when the participant clicks a button, we check if that button was the DONE button; if it was we set `continue_production_loop` to `false`. Then our loop_function just uses `continue_production_loop` to decide whether to loop or not. The code for that looks like this:
-
-```js
-function make_production_trial(object_filename) {
-  var continue_production_loop = true; //use this to control the production loop
-  //add the DELETE and DONE buttons to the syllables
-  var buttons = available_syllables.concat(["DELETE", "DONE"]);
-
-  //define what a single production trial looks like - this will loop
-  var single_production_trial = {
-    type: jsPsychImageButtonResponse,
-    stimulus: object_filename,
-    stimulus_height: 150,
-    choices: buttons,
-    //after the participant clicks, what happens depends on what they clicked
-    on_finish: function (data) {
-      //figure out what button they clicked using buttons and data.response
-      var button_pressed = buttons[data.response];
-      //if they clicked DONE
-      if (button_pressed == "DONE") {
-          data.label = button_pressed;
-          data.block = "production"; //mark it as production data
-          participant_final_label_set.push({object:object_filename,label:data.label}); //add this object-label pair to participant_final_label_set
-          save_iterated_learning_data(data); //save the data (which will include the built label)
-          continue_production_loop = false; //break out of the loop
-        }
-    }
-  };
-  //slot single_production_trial into a loop
-  var production_loop = {
-    timeline: [single_production_trial],
-    loop_function: function () {
-      return continue_production_loop; //keep looping until continue_production_loop=false
-    },
-  };
-  return production_loop;
-}
-```
-
-So that will loop until the participant clicks DONE, at which point the trial will stop. That's pretty close to what we want, but there are a few problems:
-
-1. We only record the *last* button the participant clicks (which will be DONE), rather than all the buttons they clicked until they clicked DONE. So we need to keep track of what they clicked as they built up their label, because that's what we are actually interested in.
-
-2. We really don't want the participant to be able to click DONE until they have produced *something* - blank responses are no use to us, we want them to click at least one syllable.
-
-3. We want the DELETE button to remove the last syllable they selected.
-
-4. We want the participant to be able to see the label as they build it - otherwise it'd be very hard for them to see if the label they were building was what they intended.
-
-We can solve all these problems by creating a new variable, `building_label`, which will be a list of all the syllables the participant has selected so far. Initially this will be empty:
-
-```js
-var building_label = [];
-```
-
-But every time the participant clicks on a syllable, we will add that syllable to the building label using push - so if the participant clicks "ti" then "vu" the building label will be:
-```js
-["ti", "vu"]
-```
-To delete the last thing they clicked, we can use a built-in javascript function called `slice` to just chop the last item off the end of the list. And if we want to display the label as a single string rather than a list of syllables we can use another built-in function, `join`, which takes a list of strings and pastes them together - e.g. `["ti", "vu"].join("")` will produce the string "tivu".
-
-All we need to do now is show that building label on the screen. We can do that using the `prompt` parameter - every time we start our `single_production_trial` loop, we can work out what the current `building_label` is and display it in the prompt (displaying a dummy whitespace prompt if there is nothing in the building label). And finally, when the participant clicks DONE we save the pasted-together building label as their complete response. The code for all that is as follows:
-
-```js
-function make_production_trial(object_filename) {
-  var building_label = []; //store the syllables of the building label here
-  var continue_production_loop = true; //use this to control the production loop
-  //add the DELETE and DONE buttons to the syllables
-  var buttons = available_syllables.concat(["DELETE", "DONE"]);
-
-  //define what a single production trial looks like - this will loop
-  var single_production_trial = {
-    type: jsPsychImageButtonResponse,
-    stimulus: object_filename,
-    stimulus_height: 150,
-    choices: buttons,
-    //show the building label in the prompt
-    prompt: function () {
-      //if the building label is empty, dummy prompt
-      if (building_label.length == 0) {
-        return "&nbsp;";
-      }
-      //otherwise, paste together the syllables in building_label into a single word using join
-      else {
-        return building_label.join("");
-      }
-    },
-    //after the participant clicks, what happens depends on what they clicked
-    on_finish: function (data) {
-      //figure out what button they clicked using buttons and data.response
-      var button_pressed = buttons[data.response];
-      //if they clicked DONE
-      if (button_pressed == "DONE") {
-        //only end the loop if they have produced *something*
-        if (building_label.length > 0) {
-          var final_label = building_label.join("");
-          data.label = final_label;
-          data.block = "production"; //mark it as production data
-          participant_final_label_set.push({object:object_filename,label:final_label}) //add this object-label pair to participant_final_label_set
-          save_iterated_learning_data(data); //save the data (which will include the built label)
-          continue_production_loop = false; //break out of the loop
-        }
-      }
-      //if they clicked DELETE, just delete the last syllable from building_label
-      //which can be done using slice
-      else if (button_pressed == "DELETE") {
-        building_label = building_label.slice(0, -1);
-      }
-      //otherwise they must have clicked a syllable button, so just add that
-      //to the building label
-      else {
-        building_label.push(button_pressed);
-      }
-    },
-  };
-  //slot single_production_trial into a loop
-  var production_loop = {
-    timeline: [single_production_trial],
-    loop_function: function () {
-      return continue_production_loop; //keep looping until continue_production_loop=false
-    },
-  };
-  return production_loop;
-}
-```
-
-That is a complicated trial! But hopefully you can see how it's built up from simpler stuff you have already seen, plus the new loop functionality. 
-
-Note that at the end of the final trial (in `on_finish`, when the participant has clicked DONE) we do three things. First, we stick together the sequence of choices from `building_label` to form their final well-formatted label:
-```js
-var final_label = building_label.join("");
-```
-
-Second, we add a representation of the object-label pair the participant produced to `participant_final_label_set`:
-```js
-participant_final_label_set.push({object:object_filename,label:final_label}); 
-```
-Third, we also save the trial data to the server as usual, using `save_iterated_learning_data`, to keep a more detailed record of the participant's response.
-
-The only annoying thing about this is that the `prompt` in the `image-button-response` plugin appears below the buttons, which looks terrible in this case, so we use a custom plugin, `image-button-response-promptabovebuttons`, which just repositions the prompt - we just load that custom plugin in the html file the same way as we do with the other local javascript files we need:
+Rather than putting all the audio recording code plus all the other experiment code in one long js file, I have split it - the audio recording code is in `confederate_priming_utilities.js`, which we load in our `confederate_priming.html` file at the same time as specifying the plugins etc we need and loading the `confederate_priming.js` file.
 
 ```html
-        <script src="plugin-image-button-response-promptabovebuttons.js"></script>
-        <script src="manage_language_files.js"></script>
-        <script src="iterated_learning.js"></script>
+<script src="confederate_priming_utilities.js"></script>
+<script src="confederate_priming.js"></script>
 ```
 
-Then we can use the custom plugin instead of `image-button-response` in our production trials.
+The browser doesn't actually care if code is split over more than one file - it reads them in one after another, so variables and functions created in one file are accessible in code in another file. Splitting the code in this way makes for code that's easier to work with and also conceptually cleaner, in that you parcel off one set of functions (in this case, for recording audio) into its own file. That also makes it easy to reuse that code elsewhere - I have various experiments involving audio recording that all use essentially the same utilities file.
 
-We can then use our `make_production_trial` function (and the equivalent `make_observation_trial` function) to create a trial list of observation and production trials. That's what the next block of code does: `build_training_timeline` and `build_testing_timeline` both take an input language specified as a list of ``{object:object_filename,label:a_label}`` object-label pairs, and build a training or testing timeline.
+For our purposes all you have to know is that `confederate_priming_utilities.js` creates some variables and functions that we can use in our main experiment code. These are:
 
-`build_training_timeline` takes a list of object-label pairs and builds a training timeline consisting of `n_repetitions` blocks (`n_repetitions` is set to 1 below, so only one repetition of each training item) - each block contains one observation trial for each object-label pair in `object_label_pairs`.
+`recording_counter`, which is just a counter where we keep track of how many audio recordings we have made - the first recording is 0, the second 1 etc. We use these in the filenames of recordings and also in the CSV data saved on the server so that we can link particular recordings to particular experiment trials. jsPsych actually already creates a trial_index variable that we could use to keep track of this, but I found it very confusing if the first audio had index 11, the second had index 15 etc, so I set up this additional counter. 
+
+`request_mic_access()`, which is a function which creates the various media and recorder objects we need to record audio, and will prompt the participant for mic access via a pop-up.
+
+`start_recording(filename_prefix)`, which is a function that starts audio recording from the participants' mic. When the audio recording stops, the audio will be saved
+to a file on the server (in `server_data/audio`) called filename_prefix_recording_counter.webm - e.g. if you pass in filename prefix "kennyaudio" the first recording will be saved as kennyaudio_0.webm.
+
+`stop_recording()` is a function which stops the current audio recording, triggering saving of the audio file, and also increments the `recording_counter` so that the next recording has a different counter value and therefore a different file name.
+
+### Random participant IDs and random delays
+
+The first part of `confederate_priming.js` is comments on the audio recording code (for human reading, the code ignores these) and then some code for saving our data trial by trial - the function `save_confederate_priming_data` saves trial data in the same way as the `save_perceptual_learning_data` function from last week, and you'll see it used in the functions below. Since you have seen similar functions before, I'll skip these - there is a little bit of added complexity in there in that we want to record slightly different data for our two trial types, but you can look at the code and comments if you are interested.
+
+The next thing in the code is a couple of functions for handling random elements of the experiment.
+
+First, we are going to assign each participant a random participant ID - this means we can save one CSV file and one set of audio recordings per participant, rather than cramming everything into a single file as we have been doing so far. We create these random IDs using a jsPsych built-in function:
+
 ```js
-function build_training_timeline(object_label_pairs, n_repetitions) {
-  var training_timeline = []; //build up our training timeline here
-  //this for-loop works through the n_repetitions blocks
-  for (i = 0; i < n_repetitions; i++) {
-    //randomise order of presentation in each block
-    var shuffled_object_label_pairs =
-      jsPsych.randomization.shuffle(object_label_pairs);
-    //in each block, present each object-label pair once
-    for (object_label_pair of shuffled_object_label_pairs) {
-      var trial = make_observation_trial(
-        object_label_pair.object,
-        object_label_pair.label
-      );
-      training_timeline.push(trial);
-    }
-  }
-  return training_timeline;
+var participant_id = jsPsych.randomization.randomID(10);
+```
+
+This creates a variable, `participant_id`, which we can use later. The participant IDs are a string of randomly-generated letters and numbers, in this case set to length 10 (e.g. "asqids6sn1") - since there are many many possible combinations of length 10 (36 to the power 10, which is more than 3,600,000,000,000,000) in practice this should mean that no two participants are assigned the same ID, and therefore each participant has a unique ID. Depending on how you set up your experiment, on some crowdsourcing platforms you might want to access the participant's platform-specific ID rather than generating a random one (e.g. every participant on Prolific has a unique ID), we'll show you how to do that in the final week of the course, it's easy. But for now we'll just generate a random ID per participant.
+
+At various points in the experiment we also want to create a random-length delay, to simulate another participant composing their description or selecting an image based on the genuine participant's description. In the Loy & Smith (2021) paper we had a fairly intricate system for generating these random delays, making them quite long initially (to simulate a partner who was not yet used to the task) and then reducing over time (to simulate increasing familiarity, but also not to needlessly waste our real participants' time); we also inserted various kinds of disfluencies, particularly early on. My impression is that this was reasonably successful - we have run a number of experiments with this set-up and not too many participants guessed they were interacting with a simulated partner - and also worth the effort, in that most of the people who *did* guess that they were not interacting with a real person were cued by their partner's response delays, in particular, noting that they were quite short and quite consistent.
+
+In the demo experiment, for simplicity's sake we just create a function which returns a random delay between 1800ms and 3000ms, using some built-in javascript code for random number generation:
+
+```js
+function random_wait() {
+  return 1800+(Math.floor(Math.random() * 1200))
 }
 ```
 
-`build_testing_timeline` takes a list of object-label pairs and builds a testing timeline with one production trial for each object in `object_label_pairs`, in random order. Note that the labels are simply discarded here - to create a production trial we just need the object filename.
+`Math.random()` generates a random number between 0 and 1 (e.g 0.127521, 0.965341). We then multiply that by 1200 and use `Math.floor` to round down to a whole number (e.g. our random numbers will become 255, 1130 respectively), then add 1800ms to produce random waits in our desired range (e.g. 2055ms, 2930ms).
+
+### Picture selection trials
+
+Now we are in a position to start coding up our main trial types. We'll start with picture selection trials, which work in a very similar way to picture selection trials in the perceptual learning experiment - participants hear some audio and then click on an image button, which is pretty straightforward using the `audio-button-response` plugin. The only added complication here is that we want to simulate another person thinking for a moment before starting their description. Unfortunately there's no built-in way to do this within the `audio-button-response` plugin - I was hoping for a `delay_before_playing_audio` parameter or something, but there's no such thing. The solution is to have a sequence of two trials that looks like a single trial - one trial where nothing happens (to simulate the wait for the confederate to speak), then the actual `audio-button-response` trial where we get the audio from the confederate. I built these both using the `audio-button-response` trial - on the waiting trial we just play a tiny bit of silence as the `stimulus` (the plugin won't allow us to have *no* sound, so this was the closest I could get) and wait for a random duration, ignoring any clicks the participant makes, then we move on and play the confederate audio.  
+
+As usual, we'll write a function where we specify the main parts of the trial (the audio file the participant will hear, which I am calling `sound`; the target image, the foil or distractor image) and then the function returns a complex trial object for us. Here's the full chunk of code, I'll walk you through it piece by piece below:  
+
 ```js
-function build_testing_timeline(object_label_pairs) {
-  var testing_timeline = [];
-  var shuffled_object_label_pairs =
-    jsPsych.randomization.shuffle(object_label_pairs);
-  for (object_label_pair of shuffled_object_label_pairs) {
-    var trial = make_production_trial(object_label_pair.object);
-    testing_timeline.push(trial);
-  }
-  return testing_timeline;
+function make_picture_selection_trial(sound, target_image, foil_image) {
+  //add target_image and foil_image to our preload list
+  images_to_preload.push(target_image);
+  images_to_preload.push(foil_image);
+
+  //create sound file name
+  var sound_file = "sounds/" + sound + ".wav";
+
+  //generate random wait and random order of images
+  var wait_duration = random_wait();
+  var shuffled_image_choices = jsPsych.randomization.shuffle([
+    target_image,
+    foil_image,
+  ]);
+
+  //trial for the delay before the partner starts speaking
+  var waiting_for_partner = {
+    type: jsPsychAudioButtonResponse,
+    stimulus: "sounds/silence.wav",
+    prompt: "<p><em>Click on the picture your partner described</em></p>",
+    choices: shuffled_image_choices,
+    trial_duration: wait_duration,
+    response_ends_trial: false, //just ignore any clicks the participant makes here!
+    button_html:
+      '<button class="jspsych-btn"> <img src="images/%choice%.png" width=250px></button>',
+  };
+  //audio trial
+  var selection_trial = {
+    type: jsPsychAudioButtonResponse,
+    stimulus: sound_file,
+    prompt: "<p><em>Click on the picture your partner described</em></p>",
+    choices: shuffled_image_choices,
+    button_html:
+      '<button class="jspsych-btn"> <img src="images/%choice%.png" width=250px></button>',
+    post_trial_gap: 500, //a little pause after the participant makes their choice
+    on_start: function (trial) {
+      trial.data = {
+        participant_task: "picture_selection",
+        button_choices: shuffled_image_choices,
+      };
+    },
+    on_finish: function (data) {
+      var button_number = data.response;
+      data.button_selected = data.button_choices[button_number];
+      save_confederate_priming_data(data); //save the trial data
+    },
+  };
+  var full_trial = { timeline: [waiting_for_partner, selection_trial] };
+  return full_trial;
 }
 ```
 
-### Putting it all together
+First, we need to do some book-keeping. 
 
-Finally we are in a position to put all of these functions together. The function `run_experiment()`, code below, runs through a 9-step process of looking for open chains, selecting an input filename to iterate from, building timelines and running the experiment, then saving an output language for the next generation to iterate from. The 9 steps are:
-
-1. We see if there are any input languages available for iteration. If not, we
-just tell the participant to come back later. If there at least one input language available, we proceed.
-2. We select a random input language to use. The name of this file tells us what
-chain and generation we are running (e.g. if the filename is chain10_g7.csv we know we are running generation 7 of chain 10), so we can extract that info from the filename (extracting this info from the filename is a little bit fiddly).
-3. We read in the input language from the appropriate file.
-4. We use that input language to generate training trials for this participant. We impose a *bottleneck* on transmission by taking a subset of the language of the previous generation (here, 14 randomly-selected object-label pairs) and using that to build the training timeline (here, repeating each of those object-label pairs once).
-5. We also use that input language to build a testing timeline, requiring the participant to do a production trial for all possible objects (i.e. not just the 14 we selected for training - they have to generalise).
-6. We build the full experiment timeline, combining the training and testing timelines with the various information screens which we defined earlier (I skipped the information trials in the code walkthrough, they are just the usual `html-button-response` trials), a trial to write headers to our data CSV file, and a preload trial.
-7. We move the input language file we are using from `server_data/il/ready_to_iterate` to `server_data/il/undergoing_iteration`, so that another participant doesn't also start working on this input language.
-8. We run the timeline
-9. a. If the participant completes the experiment (i.e. gets to the end of the production phase), we save the language they produced during production as a new input language in `server_data/il/ready_to_iterate` and also move the input language they were trained on to `server_data/il/completed_iteration`, so that we know it's been done.
-9. b. If the participant abandons the experiment we need to recycle their input language - they haven't completed the experiment, so we need someone else to run this generation of this chain. We simply move the input language file they were working on back to the `server_data/il/ready_to_iterate` folder. Note that you can capture this kind of exit event in jsPsych using the `on_close` parameter of `initJsPsych`. **NB Some people find that his method for recycling input languages is a bit unreliable** - sometimes it works, sometimes it doesn't. This might be an issue with `on_close` (to be honest I'm a bit surprised it's possible to run functions in a browser window the user is trying to close!), or maybe my implementation of the code to move files around. Anyway, if you notice when testing that files are getting stuck in `ready_to_iterate` then you can manually move them using cyberduck. If you are planning on using this code to run a real iterated learning experiment with real participants, and can't find a way to make this 100% reliable, you'd need to have some kind of clean-up procedure where you check for files that are stuck in `undergoing_iteration`. 
-
-Here's the code with those 9 steps marked up in the comments. In various places we need to know what chain and generation we are running (e.g. for saving the participant's final language to a file with the correct name), and also what input language we are working with (e.g. if the participant drops out we need to recycle that file for 
-another participant). We store this information in three variables, `chain`, `generation`, and `input_language_filename`, which we update once we allocate the participant to a specific chain and a specific language file. Note that in some places we also need to `await` the response from a PHP script that's retrieving some info from the server from us.
+We add the images we are going to show to a list we are building up, called `images_to_preload` - I will say what this is for when I talk about preloading later!
 
 ```js
-var chain;
-var generation;
-var input_language_filename;
+  //add target_image and foil_image to our preload list
+  images_to_preload.push(target_image);
+  images_to_preload.push(foil_image);
+```
 
-async function run_experiment() {
-  //1. We see if there are any input languages available for iteration
-  var available_input_languages = await list_input_languages();
-  //...If not, we just tell the participant to come back later (using the cannot_iterate_info html-keyboard-response trial created above)
-  if ((await available_input_languages.length) == 0) {
-    jsPsych.run({ timeline: [cannot_iterate_info] });
+We add the path for the sound file (all our sound files are in the `sounds` directory and have `.wav` on the end)
+
+```js
+  //create sound file name
+  var sound_file = "sounds/" + sound + ".wav";
+```
+
+We then do some randomisation stuff: we generate a random wait using our `random_wait` function (for the period of silence before the confederate starts speaking), and we shuffle the order in which the two images will be displayed on-screen. Note that we are doing this here, when we create the trial, rather than in the `on_start`, because our picture selection trial is actually going to have a sequence of two trials in it, and we want them to have the pictures in the same order (it would be super-weird if the order of the images flip part-way through the trial!). There are several ways this could be achieved, I thought this was the simplest.
+
+```js
+  //generate random wait and random order of images
+  var wait_duration = random_wait();
+  var shuffled_image_choices = jsPsych.randomization.shuffle([
+    target_image,
+    foil_image,
+  ]);
+```
+
+
+Our random wait is then an `audio-button-response` trial, where the participant sees the two image buttons on screen, but we ignore anything they click on (`response_ends_trial` is set to false), and we set `trial_duration` to the random wait we generated earlier. As in the perceptual learning experiment, we are using the `button_html` parameter to make our buttons appear as images rather than text.
+
+```js
+  //trial for the delay before the partner starts speaking
+  var waiting_for_partner = {
+    type: jsPsychAudioButtonResponse,
+    stimulus: "sounds/silence.wav",
+    prompt: "<p><em>Click on the picture your partner described</em></p>",
+    choices: shuffled_image_choices,
+    trial_duration: wait_duration,
+    response_ends_trial: false, //just ignore any clicks the participant makes here!
+    button_html:
+      '<button class="jspsych-btn"> <img src="images/%choice%.png" width=250px></button>',
+  };
+```
+
+Our actual selection trial requires quite a large block of code to generate it (see the big chunk of code above, where we create `selection_trial`), but this is all stuff you have seen before - an `audio-button-response trial`, where we add some stuff the the trial data `on_start`, and then work out which button the participant actually clicked `on_finish`, saving the trial data to the server using the `save_confederate_priming_data` function. 
+
+Finally, we stick our waiting trial and our picture selection trial together as a single trial consisting of just a timeline and returning that two-part trial.:
+
+```js
+var full_trial = {timeline:[waiting_for_partner,selection_trial]};
+return full_trial
+```
+
+### Picture description trials
+
+Next we create our picture description trials - remember, for these the participant sees two images side by side, with the target highlighted by a green box, clicks a button to start recording a description, clicks again to stop recording, and then "waits for their partner to make a picture selection" based on their description (in reality, the participant just gets a waiting message and waits for a random time). This can be achieved with a 3-part timeline: the initial part of the trial where the participant sees the pair of images and clicks a button to start recording, then the second part where they speak and then click again to stop recording, then the random wait. 
+
+That sounds reasonably straightforward, but we have a slight issue in that we want to show *two* images side by side, and the `image-button-response` plugin (which seems like the obvious one to use) is designed to show a single stimulus. There are a couple of ways around this. We could write our own plugin that shows two images (but messing with plugins can be a little intimidating); we could make a whole bunch of image files that contain two images side by side (but given the number of images we have that will be a *huge* number of composite images!); or we can use another more flexible plugin. 
+
+In the end I went for the 3rd option: I use `html-button-response` as my main plugin, since it allows the `stimulus` to be any html string, and since html can include images that means I can create an html stimulus that contains two images side by side. For example, if I want to show two images (imagine they are called them `image1.png` and `image2.png`) side by side in html then this will work:
+
+```js
+var composite_image ="<img src=image1.png> <img src=image2.png>"; 
+```
+
+That's a valid piece of html that uses image tags to include two images in a single piece of html, and it will work fine as the stimulus for an `html-button-response` trial. If we want to make the images the same size and add a green box around one of them (to identify it as the target) then we need slightly more complex html, but the same idea:
+
+```js
+var composite_image ="<img src=image1.png width=250px style='border:5px solid green;'> <img src=image2.png width=250px>";
+```
+
+The extra stuff sets the image width (you have seen that before) and the border (it took me a while and quite a lot of googling and trial-and-error to figure that out).
+
+Again, we write a function which builds this complex trial for us - we pass in the target image to be described plus the foil image, it returns the complex trial for us. The full code is here, I'll walk you through it below:
+
+```js
+function make_picture_description_trial(target_image, foil_image) {
+  //add target_image and foil_image to our preload list
+  images_to_preload.push(target_image);
+  images_to_preload.push(foil_image);
+
+  //generate random wait and random order of images
+  var wait_duration = random_wait();
+  var shuffled_images = jsPsych.randomization.shuffle([
+    target_image,
+    foil_image,
+  ]);
+  var left_image = shuffled_images[0];
+  var right_image = shuffled_images[1];
+  //need to highlight the target with a green border - first need to work out whether
+  //the target is on the left or the right!
+  if (left_image == target_image) {
+    var composite_image =
+      "<img src=images/" +
+      left_image +
+      ".png width=250px style='border:5px solid green;'> <img src=images/" +
+      right_image +
+      ".png  width=250px>";
+  } else {
+    var composite_image =
+      "<img src=images/" +
+      left_image +
+      ".png width=250px> <img src=images/" +
+      right_image +
+      ".png  width=250px style='border:5px solid green;'>";
   }
-  //...If there is, we proceed.
-  else {
-    //2. We select a random input language to use.
-    input_language_filename = jsPsych.randomization.shuffle(
-      available_input_languages
-    )[0];
-    //...The name of this file tells us what chain and generation we are running
-    //To retrieve generation and chain info from filename, split the filename at _ and .
-    var split_filename = input_language_filename.split(/_|\./);
-    //chainX will be the first item in split_filename, just need to lop off the 'chain' prefix and convert to integer
-    chain = parseInt(split_filename[0].substring(5));
-    //gY will be the second item in split_filename, ust need to lop off the 'g' prefix and convert to integer
-    var input_generation = parseInt(split_filename[1].substring(1));
-    //*This* generation will be the input language generation + 1
-    generation = input_generation + 1;
-
-    // 3. We read in the input language from the appropriate file.
-    var input_language = await read_input_language(input_language_filename);
-
-    // 4. We use that input language to generate training trials for this participant.
-    // We impose a bottleneck on transmission by taking a subset of the language
-    // of the previous generation (here, 14 randomly-selected object-label pairs)
-    // and using that to build the training timeline (here, repeating each of those
-    // object-label pairs once)
-    var training_object_label_pairs =
-      jsPsych.randomization.sampleWithoutReplacement(input_language, 14);
-    // Note just 1 repetition of each label in training, just to keep the experiment duration down for you!
-    var training_timeline = build_training_timeline(
-      training_object_label_pairs,
-      1
-    );
-
-    // 5. We use that input language to build a testing timeline, requiring the participant
-    // to do a production trial for each object.
-    var testing_timeline = build_testing_timeline(input_language);
-
-    // NB I am creating a tidy-up trial, to run when the participant completes the production
-    // phase, at this point, so it looks out of sequence! I could have done this in the
-    // on_close of the last production trial, but it seemed simpler to do it as a
-    // stand-alone event in the timeline, using the call-function trial type.
-    // 9. If the participant completes the experiment (i.e. gets to the end of the production
-    // phase), we save the language they produced during production as a new input language
-    // in server_data/il/ready_to_iterate and also move the input language they were trained on to
-    // server_data/il/completed_iteration, so that we know it's been done.
-    var tidy_up_trial = {
-      type: jsPsychCallFunction,
-      func: function () {
-        save_output_language(participant_final_label_set);
-        move_input_language(
-          input_language_filename,
-          "undergoing_iteration",
-          "completed_iteration"
-        );
-      },
-    };
-
-    // 6. We build the full experiment timeline, combining the training and testing timelines
-    // with the various information screens.
-    var full_timeline = [].concat(
-      consent_screen,
-      preload_trial,
-      write_headers,
-      instruction_screen_observation,
-      training_timeline,
-      instruction_screen_testing,
-      testing_timeline,
-      tidy_up_trial,
-      final_screen
-    );
-    // 7. We move the input language file we are using from server_data/il/ready_to_iterate to
-    // server_data/il/undergoing_iteration, so that another participant doesn't
-    // also start working on this input language.
-    move_input_language(
-      input_language_filename,
-      "ready_to_iterate",
-      "undergoing_iteration"
-    );
-
-    // 8. We run the timeline
-    jsPsych.run(full_timeline);
-  }
+  var picture_plus_white_mic = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: composite_image,
+    prompt: "<p><em>Describe the picture in the green box</p></em>",
+    choices: ["mic"],
+    button_html:
+      '<button class="jspsych-btn" style="background-color: white;"> <img src="images/%choice%.png" width=75px></button>',
+  };
+  var picture_plus_orange_mic = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: composite_image,
+    choices: ["mic"],
+    prompt: "<p><em>Describe the picture in the green box</p></em>",
+    button_html:
+      '<button class="jspsych-btn" style="background-color: Darkorange;"> <img src="images/%choice%.png" width=75px></button>',
+    on_start: function (trial) {
+      trial.data = {
+        participant_task: "picture_description",
+        target: target_image,
+        distractor: foil_image,
+      };
+      start_recording(participant_id);
+    },
+    on_finish: function (data) {
+      data.recording_counter = recording_counter;
+      stop_recording();
+      save_confederate_priming_data(data);
+    },
+  };
+  var waiting_for_partner = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: "Waiting for partner to select",
+    choices: [],
+    trial_duration: wait_duration,
+    post_trial_gap: 500, //short pause after the confederate makes their selection
+  };
+  var full_trial = {
+    timeline: [
+      picture_plus_white_mic,
+      picture_plus_orange_mic,
+      waiting_for_partner,
+    ],
+  };
+  return full_trial;
 }
 ```
 
-An additional thing to note about this code: I have not implemented the deduplication filter - I figured the code was complicated enough! If you want to implement this (it's an optional and challenging exercise this week) you will need two extra steps:
-1. Before implementing step 9a, saving the participant's produced language to the `ready_to_iterate` folder, you need to check it is usable, i.e. contains enough distinct labels. If so, you proceed as normal; if not, you recycle their input language (in roughly the same way as if they had abandoned) and try again.
-2. On step 4, selecting object-label pairs to use for training, you would need to select in a way that avoids duplicate labels, rather than selecting randomly.
+Let's step through that chunk by chunk. First we do some book-keeping - as with the picture selection trials, we keep track of image names for later preloading...
 
-Also note that there is no maximum generation number in this code - chains will
-run forever! If you want to stop at e.g. 10 generations, this could also be implemented in step 9a - check this participant's generation number, if they are at generation 10 then don't save their lexicon to the ready_to_iterate folder.
+```js
+  //add target_image and foil_image to our preload list
+  images_to_preload.push(target_image);
+  images_to_preload.push(foil_image);
+```
 
-The final line of the code simply runs this `run_experiment()` function, starting the whole 9-step process described above. 
+...and we generate a random wait (for the screen at the end) and a random ordering of our target and foil images.
 
-## Exercises with the iterated learning experiment code
+```js
+  //generate random wait and random order of images
+  var wait_duration = random_wait();
+  var shuffled_images = jsPsych.randomization.shuffle([
+    target_image,
+    foil_image,
+  ]);
+```
 
-As usual, try these yourself, and once you have had a go, you can [look at our notes](oels_practical_wk9_notes.md).
+But once we have generated that random ordering, we need to figure out whether the target image ended up on the left or the right, because we need to draw a green box around the target. To do that we split our `shuffled_images` into the `left_image` (the first, or 0th thing in the list since javascript counts from 0) and the `right_image` (the second, or 1st thing in the list):
 
-- **After setting up the various folders in `server_data`**, run the experiment and use cyberduck to watch the CSV files appearing and moving around in `server_data/il` - remember you will need to click refresh in cyberduck regularly to see what's happening. Experiment with abandoning the experiment part-way through (i.e. closing the browser window) and see what happens. Look at the CSV data files that get created in various places, and check that the contents of the data files make sense and how they relate to what you see as a participant. Try to run a few generations of at least one chain and check that the iteration process works as you expect.
-- How would you increase the number of training trials in the observation phase of the experiment to provide e.g. 6 passes through the training set? How would you increase or decrease the size of the transmission bottleneck?
-- How would you randomise the order of the syllables on production trials separately for every production trial? Do you think that is better or worse? How about if you don't randomise them at all? Have a think about the possible consequences of these various randomisation choices.
-- [Harder, optional] How could you insert a small number of test trials after each block of training trials, to keep the participant focussed on the task? [You can check my model answer once you have tried this yourself.](oels_practical_wk9_extended.md)
-- [Harder, optional] Can you add a maximum generation number, so no chain goes beyond e.g. 10 generations? [You can check my model answer once you have tried this yourself.](oels_practical_wk9_extended.md)
-- [Very hard, very optional] Can you implement a deduplication filter like that used by Beckner et al., to avoid presenting participants with ambiguous duplicate labels (where two distinct pictures map to the same label)? [You can check my model answer once you have tried this yourself.](oels_practical_wk9_extended.md)
+```js
+  var left_image = shuffled_images[0];
+  var right_image = shuffled_images[1];
+```
+
+Now we can build our composite image as an html string, using the same technique as above, but we can work out whether we need to draw a box around the left or right image by looking to see whether the left image is the target or not, using an if statement:
+
+```js
+if (left_image == target_image) {
+    var composite_image =
+      "<img src=images/" +
+      left_image +
+      ".png width=250px style='border:5px solid green;'> <img src=images/" +
+      right_image +
+      ".png  width=250px>";
+  } else {
+    var composite_image =
+      "<img src=images/" +
+      left_image +
+      ".png width=250px> <img src=images/" +
+      right_image +
+      ".png  width=250px style='border:5px solid green;'>";
+  }
+```
+
+That looks a bit scary, but it is just building an html string in the same way as the simpler example above, and specifying the box on the first image if that's the target, the second image otherwise.
+
+Now we have the first sub-trial where the participant sees the composite image plus a "start recording" button and clicks to begin recording. This is just an `html-button-response` trial:
+
+```js
+var picture_plus_white_mic = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: composite_image,
+    prompt: "<p><em>Describe the picture in the green box</p></em>",
+    choices: ["mic"],
+    button_html:
+      '<button class="jspsych-btn" style="background-color: white;"> <img src="images/%choice%.png" width=75px></button>',
+  };
+```
+
+The participant's `choices` on this trial is just the mic button - we use the `mic` image file, which is in the `images` folder, and do a little bit of formatting in `button_html` so the mic image appears with a white background (which we'll change below to orange to indicate they are recording).
+
+When the participant is ready they click the mic button, which progresses them to the next trial. This is where the action happens: we have to indicate they are recording (which we do by turning the mic button orange), actually start the recording, and then when they click the mic button again we have to stop the recording and save the trial data. The code for all that looks like this:
+
+```js
+  var picture_plus_orange_mic = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: composite_image,
+    choices: ["mic"],
+    prompt: "<p><em>Describe the picture in the green box</p></em>",
+    button_html:
+      '<button class="jspsych-btn" style="background-color: Darkorange;"> <img src="images/%choice%.png" width=75px></button>',
+    on_start: function (trial) {
+      trial.data = {
+        participant_task: "picture_description",
+        target: target_image,
+        foil: foil_image,
+      };
+      start_recording(participant_id);
+    },
+    on_finish: function (data) {
+      data.recording_counter = recording_counter;
+      stop_recording();
+      save_confederate_priming_data(data);
+    },
+  };
+```
+
+A bunch of stuff is the same as in the `picture_plus_white_mic` trial - the image, its size, the mic button, the prompt - so there is no big visual change for the participant. But a couple of things are different.
+
+First, we change the background colour of the mic image to orange, so the participant can see their click had an effect and they are now recording. This is done in the `button_html` parameter, where we set the mic button background to dark orange.
+
+```js
+button_html:'<button class="jspsych-btn" style="background-color: Darkorange;"> <img src="images/%choice%.png" width=75px></button>',
+```
+
+Next, the trial has an `on_start` function, where (as well as adding information to the trial data) we use the `start_recording` function to start recording from the participant's mic. Remember, this function is defined in our `confederate_priming_utilities.js` file, and we specify the name of the file where we want the audio saved - here we are using the participant's ID (which we created earlier and stored in the variable `participant_id`), so that each participant's audio will be recorded in easily-identified and separate sets of files:
+
+```js
+on_start: function (trial) {
+      ...
+      start_recording(participant_id);
+    },
+```
+
+Finally, when the participant is done talking they click the mic button again to stop recording - so in this trial's `on_finish` parameter (which runs when they click the mic button) we stop the recording using our `stop_recording()` function.
+
+```js
+on_finish: function(data) {
+  ...
+  stop_recording();
+  ...
+}
+```
+ We also want to save the data from this trial, which we do using `save_confederate_priming_data`. But when we do that, we want to keep a note of `recording_counter` (which is our internal counter of recording numbers), so that when it comes time to listen to the recordings we can link the audio recording files (which include `recording_counter` in their name) with the specific trial in the experiment. To do that, we make a note of `recording_counter` in our trial data (note that we do that *before* we stop the recording, because `stop_recording` increments `recording_counter` in preparation for the next recording), then save that data.
+
+ ```js
+ on_finish: function(data) {
+ data.recording_counter = recording_counter
+ ...
+ save_confederate_priming_data(data)}
+ ```
+
+Finally, we add the third sub-trial, a very simple waiting message using the random duration we generated earlier, and then build and return a trial with a nested timeline featuring our three trials (white mic, orange mic, waiting message):
+
+```js
+  var waiting_for_partner = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: "Waiting for partner to select",
+    choices: [],
+    trial_duration: wait_duration,
+    post_trial_gap: 500, //short pause after the confederate makes their selection
+  };
+  var full_trial = {
+    timeline: [
+      picture_plus_white_mic,
+      picture_plus_orange_mic,
+      waiting_for_partner,
+    ],
+  };
+  return full_trial;
+}
+```
+
+### Building the interaction timeline
+
+Now we can use these functions to build our timeline. We'll start by building a set of interaction trials, which alternate picture selection and picture description trials, then add the usual instructions etc later. Here's a set of 6 trials - the critical trials are 3 (the confederate describes a red sock using an overspecific description "the red sock") and 6 (the participant describes a red bowl - will they say "the red bowl", or just "the bowl"?). 
+
+```js
+var interaction_trials = [
+  //filler (confederate describes face)
+  make_picture_selection_trial("f_fr1", "f_fr1", "f_ha2"),
+  //filler (participant describes fruit/vegetable)
+  make_picture_description_trial("frv3", "frv12"),
+  //critical trial (confederate describes red sock using adjective)
+  make_picture_selection_trial("g4_c1_1", "g4_c1", "g2_c3"),
+  //filler (participant describes animal)
+  make_picture_description_trial("ani1", "ani15"),
+  //filler (confederate describes face)
+  make_picture_selection_trial("f_su3", "f_su4", "f_sa1"),
+  //critical trial (participant describes red bowl)
+  make_picture_description_trial("k1_c1", "k2_c2"),
+];
+```
+
+We then combine `interaction_trials` with some information screens (including a detailed explanation for the participant on granting mic access) to produce the full experiment timeline.
+
+### A custom preload list
+
+As I mentioned in last week's practical, jsPsych's `preload` plugin will pre-load images and audio for certain trial types, which makes the experiment run more smoothly and ensures that images you think participants are seeing have actually been loaded and are displaying. In particular, the image in `image-button-response` trials and the audio in `audio-button-response` trials are preloaded automatically if you include a preload plugin and set `auto_preload: true`. However, that won't automatically preload images used as buttons in `audio-button-response` trials, which means our image buttons in picture selection trials will not be pre-loaded, and it doesn't preload anything for `html-button-response` trials, so our fancy composite images won't be preloaded either. Fortunately the `preload` plugin allows you to specify an additional list of images to be preloaded, which we will use to preload these images. 
+
+While we could manually code up a preload list (boring) or just load *all* the images we might need (a bit naughty since we are probably wasting the participant's bandwidth!), it's possible to get the code to construct this custom preload list for us. You might have attempted this last week, where we played around with working through a trial list and identifying images to preload. This week we are actually taking a slightly different approach: every time we build a trial, we make a note of the images we will need to preload. So right near the top of the `confederate_priming.js` file you'll find:
+
+```js
+//initially our images_to_preload list contains only 1 image, the microphone!
+var images_to_preload = ["mic"];
+```
+
+That creates a variable where we can store a list of the images we will need to pre-load - we always need the microphone image, so that is in there. Then, as you have already seen, every time we call our functions which create trials for us, we add some images to this list using `push`. 
+
+```js
+function make_picture_selection_trial(sound, target_image, foil_image) {
+  //add target_image and foil_image to our preload list
+  images_to_preload.push(target_image);
+  images_to_preload.push(foil_image);
+...
+
+function make_picture_description_trial(target_image, foil_image) {
+  //add target_image and foil_image to our preload list
+  images_to_preload.push(target_image);
+  images_to_preload.push(foil_image);
+```
+
+So by the time we have created all our trials, our `images_to_preload` variable will contain a list of image names for preloading, which we can use in the `preload` plugin. Or almost - we have to do a little extra work, to add the path and file type information to each image name, which we do with a for loop. 
+
+```js
+var images_to_preload_with_path = [];
+for (image of images_to_preload) {
+  var full_image_name = "images/" + image + ".png";
+  images_to_preload_with_path.push(full_image_name);
+}
+
+/*
+Now we can make our preload trial
+*/
+var preload = {
+  type: jsPsychPreload,
+  auto_preload: true,
+  images: images_to_preload_with_path,
+};
+```
+
+
+### Advanced: reading the trial list from a CSV file
+
+That's probably enough for one week, so if you feel you have learned enough for today you can skim this section very fast and not worry about the details - we'll actually cover something similar next week, so you'll have two opportunities to see this technique. But if you can take a bit more, read on! You don't have to master the details of this stuff, but getting the rough idea of how you read a trial list from a CSV might be useful.
+
+The code above, which is in `confederate_priming.html` and `confederate_priming.js`, is perfectly adequate, and by adding more trials to `interaction_trials` you could fully replicate the Loy & Smith (2021) online experiments. However, the trial sequence in this experiment is pretty complex - as well as the correct sequence of primes, targets and fillers, we have to make sure we use all the objects and all the colours, get a mix of same-category and different-category prime-target fillers, and so on. For experiments with a complex trial sequence it's often useful to build trial lists in advance (either manually, which would be hard, or using whatever programming language you are comfortable with), and then load those trial lists into the experiment. 
+
+If you look in the `trial_lists` folder you downloaded as part of the zip file for this week, you'll see a couple of CSV files containing trial lists - one for an overspecific confederate, and one for a minimally specific confederate. You would want many such files for a real experiment, to avoid your participants all seeing the same trial sequence, but to keep it simple I'll only show you two! Each line of those CSV files describes a trial: the participants role (in the column participantRole: director if they are producing the description, matcher if the confederate is speaking), the file name of the target and foil image (in the columns targetImage and distractorImage), and for trials where the confederate speaks the sound file to play (in soundFile) as well as some extra information telling us what trial type we are looking at (filler, prime or target) and the condition the file is for (overspecific or minimally specific).
+
+We can read in these CSV files and use them to build a jsPsych trial list. That's what `confederate_priming_readfromcsv.html` and `confederate_priming_readfromcsv.js` do. Most of the code is the same as the basic `confederate_priming.js` code, but at the end you'll see some extra code for reading a CSV file into javascript and then converting it to a jsPsych trial list. The main function is `read_trials_and_prepare_timeline` - we specify  the file name for a trial list and it reads it, creates a timeline and then runs it. Then we can start the experiment by running something like:
+
+```js
+read_trials_and_prepare_timeline("overspecific_confederate.csv");
+```
+
+E.g. in this case, loading the overspecific confederate trial list. But how does this code work?
+
+Reading a trial list from a CSV file in this way is slightly complicated, for two reasons. One reason is that we have to convert the text in the CSV file into something we can work with in javascript, which takes some time (the code contains two functions which do this, `read_trial_list` and `build_timeline`). But the other reason is that javascript behaves quite differently to other programming languages you may have used, in that it tries to run the code *synchronously* where it can - in other words, it doesn't necessarily wait for one function to finish before it starts the next function running. This isn't really noticeable unless you try running one function that is quite slow to execute *and* you need to use the output from that function as the input to another function, which is exactly what happens when we read a CSV file from the server. You might think we could do something like:
+
+```js
+var trial_list = read_trial_list(triallist_filename)
+var interaction_trials = build_timeline(trial_list);
+```
+where `read_trial_list` gets the data from the CSV and then `build_timeline` turns it into a trial list that we can work with. However, this won't work. Getting data from a CSV file on the server takes some time - only a fraction of a second, so it appears instantaneous to us, but for the computer this is very slow. Rather than wait for the `read_trial_list` call to finish before it starts the `build_timeline` function running, the web browser will therefore press on and try to run `build_timeline`, but that will fail because the `trial_list` object which `build_timeline` needs as input doesn't actually contain any data yet, because `read_trial_list` hasn't finished!
+
+How can we get around this problem? There are various solutions, but I think the simplest one is to use the `async` and `await` functions in newer versions of javascript. This allows us to declare some functions as `async` (i.e. asynchronous), and then use `await` to tell the browser to wait for a certain operation to complete before moving on. This means we can wait until the CSV file has been successfully read before we try to process the resulting data.  
+
+That's how the `read_trials_and_prepare_timeline` function works - the full code is below, but this consists of the following steps:
+- Read in the trial list from the CSV file using the `read_trial_list` function - we will `await` this result because we can't proceed without it. To keep the code as simple as possible the `read_trial_list` function is defined in a separate javascript file, `read_from_csv.js` - if you look at `confederate_priming_readfromcsv.html` you'll see we are loading this additional javascript file along with our plugins. You don't have to look at `read_from_csv.js` unless you want to - it's fine if you treat the process of reading in the CSV file as a black box, and we'll actually use a slightly different technique next week.  
+- Use that trial list to build the interaction trials using the `build_timeline` function, which basically reads the relevant columns from the CSV and uses the `make_picture_selection_trial` and `make_picture_description_trial` functions we created earlier to make jsPsych trials.
+- Build our image preload list, which is just the same process as before but wrapped up in a function called `build_button_image_preload` so that it happens after we've made the trial list.
+- Stick that interaction timeline together with the instruction trials to produce our full timeline.
+- And then run the full timeline.
+
+In code, these steps look like this:
+
+```js
+async function read_trials_and_prepare_timeline(triallist_filename) {
+  var trial_list = await read_trial_list(triallist_filename);
+  var interaction_trials = build_timeline(trial_list);
+  var preload_trial = build_button_image_preload();
+  var full_timeline = [].concat(
+    consent_screen,
+    audio_permission_instructions1,
+    audio_permission_instructions2,
+    preload_trial,
+    write_headers,
+    pre_interaction_instructions,
+    interaction_trials,
+    final_screen
+  );
+  jsPsych.run(full_timeline);
+}
+```
+
+Being able to specify your trial list ahead of time and save it as a CSV file can be useful in general and is something we will use again next week.
+
+## Exercises with the confederate priming experiment code
+
+Attempt these problems. Once you have had a go, you can [look at our notes](oels_practical_wk8_notes.md).
+- Run the basic `conferedate_priming.html` experiment and look at the CSV and audio data files it creates. Check you can access the audio, and that you can see how the audio and the trial list link up.
+- Run it again and see where the data from the second run is stored - you may need to refresh your cyberduck window with the refresh button.
+- The short trial list I built in `conferedate_priming.js` is for an overspecific confederate. How would you modify that trial list to simulate a minimally-specific confederate?
+- Now try running the `conferedate_priming_readfromcsv.html` experiment - you don't have to work through the whole experiment, just a few trials! Again, check you can see your data on the server.
+- For this version of the experiment, how do you switch from an overspecific to minimally-specific confederate? (Hint: this involves changing the name of the file used by the `read_trials_and_prepare_timeline` function in the very last line of the code).
+- Building on the previous question: how would you randomly allocate a participant to one of these two conditions, overspecific or minimally specific? Once you have attempted this, you can look at [my thoughts on how it could be done](oels_practical_wk8_extended.md) (which also covers the harder question later on). 
+- For either of these experiments, figure out how to disable image preloading for the button images and re-run the experiment. Can you see the difference? If it works smoothly, try running the experiment in Chrome in Incognito mode, which prevents your browser saving images etc for you. Can you see the difference now?
+- [Harder, optional] Can you change the `random_wait` function so it generates longer waits early in the experiment and shorter waits later on? Once you have attempted this, you can look at [my thoughts on how it could be done](oels_practical_wk8_extended.md).
+
 
 ## References
 
-[Beckner, C., Pierrehumbert, J., & Hay, J. (2017). The emergence of linguistic structure in an online iterated learning task. *Journal of Language Evolution, 2*, 160–176.](https://doi.org/10.1093/jole/lzx001)
+[Loy, J. E., & Smith, K. (2020). Syntactic adaptation depends on perceived linguistic knowledge: Native English speakers differentially adapt to native and non-native confederates in dialogue. https://doi.org/10.31234/osf.io/pu2qa.](https://doi.org/10.31234/osf.io/pu2qa)
+
+- [Loy, J. E., & Smith, K. (2021). Speakers Align With Their Partner's Overspecification During Interaction. *Cognitive Science, 45,* e13065.](https://doi.org/10.1111/cogs.13065)
+
+
+
 
 ## Re-use
 

@@ -54,7 +54,12 @@ Each week there will be a set reading and a programming assignment. The reading 
 - [Programming task](oels_practical_wk1.md)
 - [Lecture slides](slides/oels_lecture_wk1.pdf)
 
-### Week 2 (25th September): Crowdsourcing experimental data
+### Week 2 (25th September): No classes
+
+There will be no classes in week 2 due to strike action.
+
+
+### Week 3 (2nd October): Crowdsourcing experimental data
 
 - *Scientific content:* lab vs online data collection
 - *Technical content:* more jsPsych and javascript basics
@@ -62,7 +67,7 @@ Each week there will be a set reading and a programming assignment. The reading 
 - [Programming task](oels_practical_wk2.md)
 - Lecture slides to appear here
 
-### Week 3 (2nd October): Grammaticality judgements
+### Week 4 (9th October): Grammaticality judgements
 
 - *Scientific content:* lab vs online grammaticality judgments; syntactic processing and acceptability
 - *Technical content:* simple key- and button-press responses
@@ -70,7 +75,11 @@ Each week there will be a set reading and a programming assignment. The reading 
 - [Programming task](oels_practical_wk3.md)
 - Lecture slides to appear here
 
-### Week 4 (9th October): Self-paced reading
+### Week 5 (16th October): Lab catchup week
+
+In week 5 there is no lecture, but we have a lab as usual - use this time to catch up on labs from previous weeks, and/or to catch up on / get ahead with your reading.
+
+### Week 6 (23rd October): Self-paced reading
 
 - *Scientific content:* processing costs of syntactic dependencies
 - *Technical content:* collecting reaction time data, more complex nested trials
@@ -78,11 +87,8 @@ Each week there will be a set reading and a programming assignment. The reading 
 - Programming task to appear here
 - Lecture slides to appear here
 
-### Week 5 (16th October): Lab catchup week
 
-In week 5 there is no lecture, but we have a lab as usual - use this time to catch up on labs from previous weeks, and/or to catch up on / get ahead with your reading.
-
-### Week 6 (23rd October): Word learning / frequency learning
+### Week 7 (30th October): Word learning / frequency learning
 
 - *Scientific content:* probability matching and regularisation
 - *Technical content:* using trial data for contingent trials, saving data
@@ -90,7 +96,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - Programming task to appear here
 - Lecture slides to appear here
 
-### Week 7 (30th October): Audio stimuli
+### Week 8 (6th November): Audio stimuli
 
 - *Scientific content:* speech perception, social influences on phonetic adaptation
 - *Technical content:* Audio, trial data again, preloading stimuli, saving data trial by trial
@@ -98,7 +104,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - Programming task to appear here
 - Lecture slides to appear here
 
-### Week 8 (6th November): Priming and overspecification
+### Week 9 (13th November): Priming and overspecification
 
 - *Scientific content:* Priming and overspecification
 - *Technical content:*  Audio recording, custom preload lists, reading trial lists from CSV
@@ -106,19 +112,11 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - Programming task to appear here
 - Lecture slides to appear here
 
-### Week 9 (13th November): Iterated Learning
+### Week 10 (20th November): Iterated Learning
 
 - *Scientific content:* iterated learning and the evolution of compositional structure
 - *Technical content:* looping trials, reading trial lists from CSVs again, PHP scripts for iteration
 - [Reading](oels_reading_wk9.md)
-- Programming task to appear here
-- Lecture slides to appear here
-
-### Week 10 (20th November): Participant-to-participant interaction
-
-- *Scientific content:* least effort and Zipf's Law of Abbreviation
-- *Technical content:* web sockets, python servers, incrementally building a timeline
-- [Reading](oels_reading_wk10.md)
 - Programming task to appear here
 - Lecture slides to appear here
 
@@ -129,6 +127,13 @@ No lecture or lab in week 11, but there are some materials that will be useful f
 - *Scientific content:* None!
 - *Technical content:* How to set up a server, launch and pay participants, manage qualifications, etc
 - [How to get your experiment online](oels_wk11.md)
+
+### Not taught due to loss of time through strike action: Participant-to-participant interaction
+
+- *Scientific content:* least effort and Zipf's Law of Abbreviation
+- *Technical content:* web sockets, python servers, incrementally building a timeline
+- [Reading](oels_reading_wk10.md)
+- Programming task to appear here
 
 ### Bonus content
 

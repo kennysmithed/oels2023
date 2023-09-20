@@ -1,384 +1,363 @@
 ---
-title: Week 6 practical
-description: Using trial data for contingent trials, saving data to the server
+title: Week 4 practical
+description: Collecting reaction time data, more complex nested trials
 ---
 
-# The plan for week 6 practical
+## The plan for week 4 practical
 
-This week we are going to look at a bit more of the [Online Experiments with jsPsych tutorial](https://softdev.ppls.ed.ac.uk/online_experiments/index.html), and then look at code for a simple word learning / frequency learning experiment based on the Ferdinand et al. (2019) paper we read this week. Our implementation of this experiment builds on the self-paced reading experiment in that it uses nested timelines and functions to construct trials which have a fairly complex structure (although you can implement it more simply than that). It also requires randomisation and contingent trials (what the participant sees on one trial depends on what they did at the previous trial), so we need to introduce some infrastructure to do that. Finally, I'll add some code to save data on the server at the end of the experiment, rather than just dumping it to the screen.
+This week we are going to look at code for a simple self-paced reading experiment - as you should know from the reading this week, in a self-paced reading experiment your participants read sentences word by word, and you are interested in where they are slowed down (which might indicate processing difficulties). We therefore care about reaction times (which we didn't care about for our grammaticality judgments task last week, although jsPsych collected them for us anyway). We are also going to see some slightly more complex timelines, with trials that consist of several parts. Finally, I'll add an example at the end of how to collect demographic info from your participants, which is often something you want to do.
 
-Remember, as usual the idea is that you can work through these practicals in the lab classes and, if necessary, in your own time - I recommend you use the lab classes as dedicated time to focus on the practicals, with on-tap support from the teaching team, but if you don't get through everything in lab time you should do at least some work in your own time to keep up to speed. There is quite a lot of new technical content this week, next week will be less intense!
-
-# Tutorial content
-
-Read through [section 06 of the Online Experiments with jsPsych tutorial](https://softdev.ppls.ed.ac.uk/online_experiments/06_data.html) - you can stop when you get to the section titled "Sending the data line by line" since we'll cover this next week and we'll be using a slightly different technique than Alisdair covers in his tutorial. You don't need to do the exercises dotted through the tutorial, since we will see the same bits of code in the word learning experiment. The key things you need to take away from the tutorial are:
-- You don't have to understand the details of how the POST and PHP stuff works to save the data, just that it's possible and it works.
-- You can save data to the server either at the end of the experiment, which is what I have implemented in the word learning code, or after every trial (which we will get to later in the course). **Saving data trial-by-trial is better**, so if you need to write code where you actually care about reliably getting the data (e.g. for a dissertation project) we recommend you use that method once we have shown it to you. Waiting to the end of the experiment to save the data can be risky, because if there's a technical glitch you might not get any data at all (and those glitches can happen frequently - e.g. we have had students who have had problems with this on Prolific, due to the method by which participants get redirected to Prolific after they complete your study, which interferes with saving the data). Plus if you save data trial-by-trial, then if a participant contacts you to tell you they got part-way through the experiment then their computer died you can actually verify this, pay them accordingly and also have some of their data. So the save-at-the-end method we are showing you today is inferior, but it's slightly simpler, and we are trying to introduce the complexity incrementally. 
-- The `data` property of jsPsych trials. Each trial has a `data` parameter which is populated by the code automatically depending on what the participant does during the trial - e.g. on an `html-button-response` trial it records the index of the button the participant pressed (0 for the first choice, 1 for the second choice, etc) in `data.response`. But we can also add to the `data` parameter ourselves - we can add information about the participant to every trial (e.g. their ID number), or we can add specific bits of data to certain trials (in the tutorial Alisdair gives the example of marking up trial type to allow you to separate 'boring' trials from important ones). In the word learning experiment we'll use the same technique to mark up important trials for later data filtering, but we'll also use the `data` property to record which label the participant clicked on (rather than just the button index, which is recorded automatically under `data.response`), which we can then use to handle cases where the response at one trial affects what happens at the next trial.
-
-# A word learning experiment
+Remember, as usual the idea is that you can work through these practicals in the lab classes and, if necessary, in your own time - I recommend you use the lab classes as dedicated time to focus on the practicals, with on-tap support from the teaching team. 
 
 ## First: you build it!
 
-As with last week, we'd like to give you an opportunity to try to build (parts of) this word-learning experiment yourself. As with last week, to help you get started, we are going to provide you with a couple of templates to fill in - an html file that loads some of the plugins you will need (but once you decide what additional plugins you need you will have to load them too), then a javascript file where you can put your own code. That javascript file includes some extra stuff (instructions, saving data to the server) that we pre-built for you so you can focus on the more interesting parts of the experiment.
+Believe it or not, you already have the tools to build a simple self-paced reading experiment, so this week, rather than starting with us explaining how we'd do it, we want you to have a go yourself - try that, ask us for help if necessary, then after 30-40 minutes we'll bring everyone together, see how you got on, and move on to the rest of the practical.
 
-You are actually going to need a bunch of files for this experiment - the html and javascript templates for your attempt (which we are calling `my_word_learning.html` and `my_word_learning.js`), the html  and js file for our implementation (`word_learning.html` and `word_learning.js`), but also a php file (for saving data) and a folder containing a bunch of images. Rather than downloading these separately, download the following zip file and then uncompress it into your usual jsPsych folder, in a folder called something like `word_learning`, alongside your `grammaticality_judgments` and `self_paced_reading` folders. :
-- <a href="code/word_learning.zip" download> Download word_learning.zip</a>
+To help you get started, we are going to provide you with a couple of templates to fill in - an html file that loads some of the plugins you will need (but once you decide what additional plugins you need you will have to load them too), then a javascript file where you can put your own code. That javascript file includes some extra stuff (instructions and a demographics questionnaire) that we pre-built for you so you can focus on the self-paced reading part of the experiment. Don't worry about how the demographics questionnaire works for now, that is explained when we work through our complete version of the code.  
 
-This code should run on your local computer or you can upload the whole `word_learning` folder to the `public_html` folder on the jspsychlearning server and play with it there. Note that the code for that saves the data to the server will only work if your code is actually running on the jspsychlearning server - if you are running it on your own computer the data will not save anywhere, although it will still be shown on-screen. This is because your personal computer isn't running anything that can handle POST commands and process them with PHP, which is what is involved in saving data - those things are all set up on the jspsychlearning server for you. So if you haven't already got to grips with putting your code on the server, try it now. Here's what my `public_html/online_experiments_practicals/` folder currently looks like on cyberduck.
+You can download the starter templates through the following two links:
+- <a href="code/self_paced_reading/my_self_paced_reading.html" download> Download my_self_paced_reading.html</a>
+- <a href="code/self_paced_reading/my_self_paced_reading.js" download> Download my_self_paced_reading.js</a>
 
-![suggested directory structure](images/wl_directory_structure.png)
+Note we are calling those files "my_..." to distinguish them from the full code we'll give you later. 
 
-If your directory structure is the same as mine the url for your experiment will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/word_learning/my_word_learning.html where UUN is your UUN. If you want to see what the finished experiment will look like, you can run the `word_learning.html` file which includes our final implementation - if you put everything on jspsychlearning, the URL will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/word_learning/word_learning.html. Remember that if you look at the data display at the end that will include spoilers on how to write the code yourself, so depending on how much you want to challenge yourself you might want to avoid clicking through to the data! 
+These two files should sit in a folder called something like `self_paced_reading`, alongside your `grammaticality_judgments` folder from last week - so your folder will now look something like this. 
 
-If you run through our implementation of the experiment you'll see that, in addition to the usual instructions, the experiment consists of two stages: *observation* and *production*.  Observation trials involve presentation of an object plus a label; production trials prompt the participant to select a label for an object. In a little more detail:
+![suggested directory structure](images/self_paced_reading_directory_structure.png)
 
-- Each observation trial consists of 2 steps: display the object for 1 second, then display the object plus a label for 2 seconds.
+This code should run on your local computer (just open the `my_self_paced_reading.html` file in your browser) or you can upload the whole `self_paced_reading` folder to the public_html folder on the jspsychlearning server and play with it there (if your directory structure on the server is the same as suggested above, the url for your experiment will be http://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/self_paced_reading/my_self_paced_reading.html).
 
-- Each production trial consists of 2 steps: display the object plus two labels and have the participant select a label, then have the participant confirm their label choice with a further click (which serves to centre their cursor, to prevent them mashing through the experiment too fast by clicking continually on one side). *When you implement production trials yourself, you can skip this second confirmatory step* - it involves some additional technical machinery that is relatively hard to figure out yourself (although if you really want to have a go, you can look at the jsPsych documentation on [dynamic parameters](https://www.jspsych.org/7.3/overview/dynamic-parameters/)).
+If you want to see what your finished experiment should look like, [you can run my copy on jspsychlearning](https://jspsychlearning.ppls.ed.ac.uk/~ksmith7/online_experiments_practicals/self_paced_reading/self_paced_reading.html) - if you look at the data display at the end that will include spoilers on how to write the code yourself, so depending on how much you want to challenge yourself you might want to avoid clicking through to the data! 
 
-(NB. Ferdinand et al. have a 3rd stage at the end of each production trial where you then see the object plus the selected label for 2 further seconds - I have not included that in the code here, I don't think it's crucial and I couldn't make it look nice in jsPsych without making everything else much more complicated!).
+If you run through the experiment you'll see that, in addition to the instructions and a demographics questionaire at the end (which you don't need to code up - we have provided these in the `my_self_paced_reading.js` template for you), the experiment consists of the word-by-word presentation of two sentences ("Which events was the reporter describing with great haste?" and "Which building were the architects featuring in the portfolio?"), each followed by a yes/no question ("Did the reporter see what happened?", "Did the architects have a portfolio?") - the comprehension questions are there to prevent participants just rattling through the sentence without actually reading it. 
 
-To implement your own observation and (simplified) production trials, you need to figure out what plugin(s) you need for observation and production trials (think about the stimulus and the response), then look at [the documentation](https://www.jspsych.org/7.3/plugins/list-of-plugins/) for that plugin to see how to use it and/or edit previous bits of code you have written that do something similar. The novel-object images you need are in the folder `images`. Your code should go in `my_word_learning.html` and `my_word_learning.js`.
+In a little more detail: 
+- for the word-by-word reading, the participant sees some text on screen and progresses to the next word by providing a keyboard response (the space key)
+- for the yes/no questions the participant sees some text on-screen and provides a keyboard response (either the y or n key). 
 
-Remember, it's OK to implement this in a very simple way, with a long manually-constructed trial list (which is probably a good way to start) - but if you feel more adventurous and want to use some of the ideas that were introduced last week (nested timelines, even functions to build trials) that's great too. Give it a go, see how you get on, and ask for help if/when you get stuck!
+The yes/no questions in particular should remind you strongly of what we did last week, so you might want to start by implementing those (e.g. by copying, pasting and then editing code from last week) and then figuring out how to make further tweaks to get the word-by-word sentence presentation. Give it a go, see how you get on, and ask for help if/when you get stuck!
 
-## Walk-through of our implementation
+## Our implementation of a self-paced reading experiment
 
-As you hopefully figured out when you were trying to build it yourself, the main part of the experiment uses a plugin you may not have used before (`image-button-response`), but you have used other `image` plugins (e.g. in the "hello world" exercise you used `image-keyboard-response` to display an image), and you have seen lots of `button-response` plugins (e.g. `html-button-response` for instruction screens). Our implementation uses those plugins, but we are going to add some extra machinery to randomise the placement of choices on-screen, and to allow the choices on one trial to depend on choices made at the previous trial (to get the click-to-confirm behaviour in production trials). 
+As you hopefully figured out when you were trying to build it yourself, the main part of the experiment uses a plugin you are already familiar with (`html-keyboard-response`), so the main new content this week will be showing you how to use a little bit of javascript (an array, a for-loop, a function) to make building a complex trial list a bit easier. If you have forgotten what for-loops or functions are you might find it useful to look back through [section 05 of Alisdair's Online Experiments with jsPsych tutorial](https://softdev.ppls.ed.ac.uk/online_experiments/05_javascript.html).
 
-### Nested timelines again
+### Getting started
 
-Like in the self-paced reading experiment, individual trials in this word-learning experiment are somewhat complex - they involve a couple of steps. Complex multi-part trials should sound familiar from the self-paced reading experiment, and we are going to handle it in the same way, by using nested timelines - the only difference is that each trial in the nested timeline in the self-paced reading experiment was essentially the same (see a word, press space) whereas here the component trials differ a little more here. But in our implementation we are also going to do some stuff with `data` property of each trial, so we'll start there.
+You need two files for our implementation of this experiment, which you can download through the following two links:
+- <a href="code/self_paced_reading/self_paced_reading.html" download> Download self_paced_reading.html</a>
+- <a href="code/self_paced_reading/self_paced_reading.js" download> Download self_paced_reading.js</a>
 
-### Trial data
+Again, stick these in your `self_paced_reading` folder, alongside the files for your implementation, on your computer and/or on the jspsychlearning server. 
 
-You should by now be familiar with the idea that each jsPsych trial has some properties that we can set - the trial `type` (html with keyboard response, image with button response etc), the valid `choices`, the `trial_duration` etc. In the same way, each trial has a `data` property. By default the `data` property is populated automatically by the plugin, and records data relevant to that trial type - for each plugin you'll notice there's a section of the documentation telling you what it records, for instance I can see from [the image-button-response documentation](https://www.jspsych.org/7.3/plugins/image-button-response/) (which is the plugin that we'll be using in this experiment) that it records reaction time and the index of the button that the participant pressed. But we are also allowed to add stuff to the `data` property, to augment this automatically-generated content.
+First, get the code and run through it so you can check it runs, and you can see what it does. 
 
-In this experiment we are going to use this `data` property in two ways. First, we are going to flag trials which actually contain important data. You will have already noticed that jsPsych gathers data on *all* trial types, including things like reaction times and stimulus on the consent and information screens. Recording everything is a good way to avoid losing anything, but it does make for quite a cluttered data structure at the end of the experiment. For certain critical trials in this experiment, we are going to add some information to the trial data, a `block` property, indicating trials that belong to the experiment phases/blocks that we really care about (what the participant saw on an observation trial, what they selected on a production trial); marking up those trials in that way will make it easy to find the important data when you are analysing your data.
+### Nested timelines
 
-Second, the `data` from one trial sticks around as the rest of the experiment runs. We can therefore look at the `data` property of earlier trials when constructing a new trial, which allows us to build sequences of trials where what the participant does at one trial (e.g. which button they clicked) affects what they see at the next trial: we look at the `data` from the earlier trial, extract the info we want, then use that to build the new trial.
+We'll walk you through our implementation. We'll start with a simple implementation that might be close to where you ended up when you built this experiment yourself, then we'll use some tricks to streamline this.
 
-### Observation trials
+As you may have figured out already, each individual trial in a self-paced reading experiment is actually rather complex: it involves word-by-word presentation of a sentence, followed by a comprehension question.
 
-OK, let's get started with the code. Remember that each observation trial consists of 2 steps: display the object (an image) for 1 second, then display the object plus a label (some text) for 2 seconds. There are several ways you could do this in jsPsych, most obviously using the `image-keyboard-response` or `image-button-response` plugins - since we will need buttons later, I am going to use the `image-button-response` plugin.
+The way to do this in jsPsych is to have multiple trials per sentence: one trial for each word in that sentence, and then a final trial for the comprehension question. These are all `type: jsPsychHtmlKeyboardResponse` - for the word-by-word presentation we just want the participant to hit spacebar to progress, then we will make the comprehension question a yes/no answer (basically just like in the grammaticality judgments code from last week).
 
-Again, the simplest way to do this would be to construct each sub-part of each observation trial as a stand-alone trial, and then stick them together into a simple flat timeline. For instance, if I want to show `object4` (a shiny cylinder thing) paired with the labels 'buv' and 'cal' several times I could do something like this:
+We *could* do this all manually, and just specify a long trial list like this:
 
 ```js
-var observation_object4_only = {
-  type: jsPsychImageButtonResponse,
-  stimulus: "images/object4.jpg",
-  choices: [],
-  trial_duration: 1000,
-};
-
-var observation_object4_buv = {
-  type: jsPsychImageButtonResponse,
-  stimulus: "images/object4.jpg",
-  choices: [],
-  prompt: "buv",
-  trial_duration: 2000,
-};
-
-var observation_object4_cal = {
-  type: jsPsychImageButtonResponse,
-  stimulus: "images/object4.jpg",
-  choices: [],
-  prompt: "cal",
-  trial_duration: 2000,
-};
-
-var simple_observation_trials = [
-  observation_object4_only,
-  observation_object4_buv,
-  observation_object4_only,
-  observation_object4_cal,
-  observation_object4_only,
-  observation_object4_buv,
-  observation_object4_only,
-  observation_object4_buv,
-  observation_object4_only,
-  observation_object4_cal,
+var spr_trial_the_basic_way = [
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:'Which',
+  choices: [' ']},
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:'events',
+  choices: [' ']},
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:'was',
+  choices: [' ']},
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:'the',
+  choices: [' ']},
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:'reporter',
+  choices: [' ']},
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:'describing',
+  choices: [' ']},
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:'with',
+  choices: [' ']},
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:'great',
+  choices: [' ']},
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:'haste?',
+  choices: [' ']},
+{type: jsPsychHtmlKeyboardResponse,
+  stimulus:"Did the reporter see what happened?",
+  prompt:"<p><em>Answer y for yes, n for no</em></p>",
+  choices:['y','n']}
 ];
 ```
-Then if we slot that `simple_observation_trials` into our timeline we will get the trial sequence we want.
 
-A couple of things to note here.
-- My `choices` are set to `[]` (an empty array), which means the participant cannot provide a response (there are no buttons shown on screen) - that's fine, since we just want them to watch and learn on these observation trials. 
-- Since participants can't provide a response, `trial_duration` determines how long each presentation lasts. 
-- The `stimulus` parameter points to a particular image file, in the `images` folder, which you will see matches the directory structure I am using. Keeping your stimuli separate from your code keeps things nice and neat and is essential if you are building an experiment with hundreds or thousands of stimuli - you don't want to be scrolling through all of those hunting for a single javascript file every time you need to edit your code.
-- I am using the `prompt` to show the label beneath the object. The Ferdinand paper shows the label *above* the object, but there is no built-in jsPsych plugin that does that, so rather than hacking about with the plugin code I am just showing the label underneath - editing the plugin to reposition the prompt is easy, but it surely doesn't matter whether the prompt is above or below the image so we'll stick with the jsPsych default!
+That will present the sentence "Which events was the reporter describing with great haste?" one word at a time, waiting for a spacebar response after each word, then present a y/n comprehension question at the end. This is perfectly OK and will present the sentences as intended. However, it is quite unwieldy - there is lots of redundant information (we have to specify every time the trial type, the spacebar input), building the trial list for a long experiment with hundreds of sentences is going to be very error prone, and it would be impossible to randomise the order without messing everything up horribly!
 
-This approach would work OK, but it has a couple of drawbacks. Firstly, the fact that the `observation_object4_only` trial doesn't have a `prompt` means that things will jump about a bit on the screen - the image will move up when the experiment reaches the trials with labels, to make space for the prompt, then drop down again when we are showing the object with no label, and all that movement is quite unpleasant to look at for the participant. This is actually easily fixed by including some *dummy text* as a prompt on the trials where we don't want any text in the prompt - then every trial has a prompt, and so things don't jump around on-screen so much. We could do that like this, using `&nbsp;` which is a special whitespace character in HTML that will give us a blank prompt:
+Thankfully jsPsych provides a nice way around this. A slightly more sophisticated solution involves using nested timelines (explained under *Nested timelines* in [the relevant part of the jsPsych documentation](https://www.jspsych.org/7.3/overview/timeline/#nested-timelines): we create a trial which has its own timeline, and then that timeline is expanded into a series of trials, one trial per item
+in the timeline (so each of these complex trials functions a bit like its own stand-alone embedded experiment with its own timeline). We can use nested timelines to form a more compressed representation of the long trial sequence above and get rid of some of the redundancy.
+
+The simplest way to do this is to split the long sequence for a single self-paced reading trial into a pair of trials: the self-paced reading part, which has its own nested timeline of several words, and then the comprehension question. That would look like this:
 
 ```js
-var observation_object4_only = {
-  type: jsPsychImageButtonResponse,
-  stimulus: "images/object4.jpg",
-  choices: [],
-  prompt: "&nbsp;", //dummy text
-  trial_duration: 1000,
-};
+var spr_trial_using_nested_timeline = [
+  {
+    type: jsPsychHtmlKeyboardResponse,
+    choices: [" "],
+    timeline: [
+      { stimulus: "Which" },
+      { stimulus: "events" },
+      { stimulus: "was" },
+      { stimulus: "the" },
+      { stimulus: "reporter" },
+      { stimulus: "describing" },
+      { stimulus: "with" },
+      { stimulus: "great" },
+      { stimulus: "haste?" },
+    ],
+  },
+  {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: "Did the reporter see what happened?",
+    prompt: "<p><em>Answer y for yes, n for no</em></p>",
+    choices: ["y", "n"],
+  },
+];
 ```
-Note that just including `prompt: " "` doesn't work, the code correctly identifies the fact that the prompt is empty, we have to include some content there. 
 
-The more important problem with this simple approach, like I said in connection with the self-paced reading experiment, is that building this flat timeline is going to be very laborious and redundant for an experiment involving more than a few observation trials, and quite error prone (even just writing out this little example I forgot to change the `prompt` for the second trial from "buv" to "cal", which might end up being an important mistake in a frequency-learning experiment), and there is no easy way to randomise the trial list without hopelessly scrambling everything.
+`spr_trial_using_nested_timeline` is a list of two trials (those two trials are enclosed in square brackets `[...]`, because that's how we represent lists). The first trial is an `html-keyboard-response` trial, which accepts space as the only valid input, and which has a nested timeline specifying the only thing that differs between the sub-trials, the `stimulus` - each item in the nested timeline gets the `type` and `choices` parameters from its parent, and differs only in its `stimulus`, so when the nested timeline is run we end up with our sentence presented in a sequence of 9 trials. Then the second trial in `spr_trial_using_nested_timeline` is the comprehension question, another `html-keyboard-response` trial just looking for a y-n response.
 
-So instead I am adopting the same approach as in the self-paced reading experiment: using nested timelines to tie together the sub-parts of a single trial, and wrapping the whole thing in a function that builds a single observation trial for us in a neat, compartmentalised way. The code for that is as follows:
+I find that quite clear to look at, but you'll notice that there's still some redundancy (we have to specify twice that type is `jsPsychHtmlKeyboardResponse`). Plus our trial list, `spr_trial_using_nested_timeline`, is just producing a flat array of reading trials then a comprehension question - you could imagine that if we extended that to contain e.g. 6 sentence presentations and 6 questions, and if we wanted to randomise the order somehow, we might accidentally separate a sentence and its comprehension question.
+
+There is an even more compressed way of representing this trial sequence, which looks like this:
 
 ```js
-function make_observation_trial(object, label) {
-  var object_filename = "images/" + object + ".jpg"; //build file name for the object
-  trial = {
-    type: jsPsychImageButtonResponse,
-    stimulus: object_filename,
-    choices: [],
+var spr_trial_using_very_nested_timeline = [
+  {
+    type: jsPsychHtmlKeyboardResponse,
     timeline: [
       {
-        prompt: "&nbsp;", //dummy text
-        trial_duration: 1000,
+        choices: [" "],
+        timeline: [
+          { stimulus: "Which" },
+          { stimulus: "events" },
+          { stimulus: "was" },
+          { stimulus: "the" },
+          { stimulus: "reporter" },
+          { stimulus: "describing" },
+          { stimulus: "with" },
+          { stimulus: "great" },
+          { stimulus: "haste?" },
+        ],
       },
-      { prompt: label, 
-        trial_duration: 2000, 
-        data: { block: "observation" } },
+      {
+        stimulus: "Was that a self-paced reading trial?",
+        prompt: "<p><em>Answer y for yes, n for no</em></p>",
+        choices: ["y", "n"],
+      },
     ],
-  };
-  return trial;
-}
-```
-
-This bit of code creates a function, called `make_observation_trial`. We specify the object and the label and it does the rest for us, returning a complex trial with a nested timeline containing the two sub-parts (object only, then object plus label).
-
-A couple of things to note here:
-- It is going to be annoying to have to specify the full path of the image files every time we use this function, so instead we just pass in the name of the object we want displayed (e.g. `'object4'`) and the code works out what the filename will be (it sticks the directory name on the front and the .jpg extension on the end).
-- The trial has a nested timeline - the top level specifies the common properties shared by all trials (`type`, `stimulus`, `choices`), then for each sub-trial in the nested timeline we specify the bits that vary (the first sub-trial has a dummy prompt and a duration of 1000ms, the second has the label as the prompt and a longer duration).
-- For the second sub-trial I have also specified something for the `data` parameter - it says `data:{block: "observation"}`. `{block: "observation"}` is javascript notation for a dictionary, which says basically "create a data structure with labelled entries; one of those entries is called block, and that entry contains the string 'observation'". This is the format that jsPsych expects `data` entries to be - i.e. dictionaries - and jsPsych will later add to the starting data we have given it, recording the stimulus, trial duration etc alongside our `block` property. But now we have a way of spotting observation trials in the data at the end of the experiment - we just search for data items which have the `block` property set to `"observation"`. This might seem a bit mysterious at the moment but it will hopefully be clearer later, particularly when you look at the data the experiment generates.
-
-Now we can use this function to make some observation trials - in the code I make a 5-trial observation phase, where object4 is paired with two non-word labels, "buv" and "cal". The first step is to make those two trial types with the two different labels, using our new function:
-
-```js
-var observation_trial_object4_buv = make_observation_trial("object4", "buv");
-var observation_trial_object4_cal = make_observation_trial("object4", "cal");
-```
-
-Now we are going to need several of these trials in training - let's say I want 3 buvs and 2 cals. I could just do this manually, but it's easier and less error-prone to use the built-in function that jsPsych provides for repeating trials, `jsPsych.randomization.repeat`.
-
-```js
-var observation_trials = jsPsych.randomization.repeat(
-  [observation_trial_object4_buv, observation_trial_object4_cal],
-  [3, 2]
-);
-```
-Note that we give `jsPsych.randomization.repeat` a list of trials that we want repeated, and a second list telling it how many repetitions we want of each of those trials (3 of the first one, 2 of the second). [The documentation for that repeat function is here](https://www.jspsych.org/7.3/reference/jspsych-randomization/#jspsychrandomizationrepeat) if you are curious.
-
-And that's our observation timeline built. Now we need to build the production trials.
-
-### Production trials
-
-We will use some of the same tricks (a function that creates a trial with a nested timeline, adding a `block` property to the `data` so we can spot the production trials easily later), but also some new stuff to handle contingent trials.
-
-Remember that each production trial consists of two steps: display the object plus two labels and have the participant select a label, then have the participant confirm their label choice with a further click in the middle. Step 1 is fairly straightforward, except that we want to copy Ferdinand et al. and randomise the left-right order in which the labels appear on each trial (this would also have come in handy last week if you were working on the optional maze task exercise). But step 2 is tricky - the label shown at the 2nd step of the trial needs to depend on what button the participant clicks on the 1st step.
-
-Rather than dumping the final code in here I am going to talk you through it in the same way as for the observation phase, starting out with imagining how you'd do a single production trial as a sequence of two separate trials, then going from that to a single trial with a nested timeline.
-
-Here's a simple way to implement the 1st step of a production trial - show the object plus two labelled buttons. Let's say we want to show object4 with the options buv and cal, to follow on from our observation phase above.
-
-```js
-var production_step1 = {
-  type: jsPsychImageButtonResponse,
-  stimulus: "images/object4.jpg",
-  choices: ["buv", "cal"],
-};
-```
-
-That is very simple, but the labels will always appear in the same order - buv on the left, cal on the right. That might be a problem - maybe people will be biased to click on one side, or maybe this will encourage them to always click on the same side and given very self-consistent responses just because they are being lazy. So we want to randomise the order of the buttons, and we want to do this *independently* for every trial, so that sometimes buv is on the left and sometimes it's on the right.
-
-There are a couple of ways you could do this in jsPsych. I am going to do it using the `on_start` property of trials. This allows us to specify some code to run when the trial starts but before anything is displayed on screen, and importantly the stuff that happens in `on_start` can alter the other trial properties. Specifically, initially we'll start off with `choices` in a fixed order (it will complain if we try to leave `choices` unspecified, so we have to set it to *something*, it might as well be this, or we could do an empty array `[]` if you prefer) and then generate a random ordering of the labels in the `on_start`.
-
-```js
-var production_step1 = {
-  type: jsPsychImageButtonResponse,
-  stimulus: "images/object4.jpg",
-  choices: ["buv", "cal"], //dummy choices initially
-  on_start: function (trial) {
-    var shuffled_label_choices = jsPsych.randomization.shuffle(["buv", "cal"]);
-    trial.choices = shuffled_label_choices;
   },
-};
+];
 ```
 
-Inside `on_start` we shuffle the two labels, using another  randomisation function provided by jsPsych, [jsPsych.randomization.shuffle](https://www.jspsych.org/7.3/reference/jspsych-randomization/#jspsychrandomizationshuffle), which will randomise the order of items in a list we give it. We can then set the trial's `choices` parameter to that shuffled ordering (overwriting the fixed order we started with) with the code 
+So that's a single `html-keyboard-response` trial which has a nested timeline; the first item in the nested timeline is the spacebar-response trials, which itself has a nested timeline, and then the second item in the timeline is a single trial with different `choices`, `stimulus` and `prompt`. Personally I find that slightly more confusing to look at in the code, but I like that what is conceptually a single trial - a sentence plus its comprehension question - is now a single (quite complex!) trial in the experiment.
+
+It's important to emphasise that these three ways of representing a self-paced reading trial all work, and look the same from the participant perspective - which one you choose might be decided by things like what you plan to do for randomisation, or how confident you are that you understand what the nested trial lists are doing!
+
+Nested trial lists therefore make it quite easy to build a single self-paced reading trial. However, it's still going to be a bit laborious to build a sequence of such trials. In order to build two trials we'd have to do something like this:
 
 ```js
-trial.choices = shuffled_label_choices;
-```
-
-So by the time the participant actually sees the choices on the screen, `on_start` will already have done its work and the two buttons will appear in a randomised order.
-
-That will work, but we still haven't addressed the trickiest problem - how do we build the 2nd step of a production trial, where the label I select at step 1 is shown to me again for confirmation / to center my mouse? This is a pretty common thing to want to do - there are many experimental designs where you want to make behaviour at later trials depend on the participant's response, for example you might want to provide corrective feedback, repeat trials that a participant gets wrong, or (as in our case) show something that relates to their earlier response.
-
-The way to do this is to store the info you need from one trial in its `data` property, then later on you can use some built-in jsPsych functions to look back at the earlier trial and read the information you need from the relevant bit of that `data`. We already know that button response trials automatically record the index of the button the participant pressed, in `data.response` - that will be 0 if they pressed the first button, 1 if they pressed the second, etc. But that actually isn't super-useful, because we are randomising the button positions - we don't know if button 0 is buv or cal in our example, and (slightly weirdly in my opinion), jsPsych doesn't automatically record the `choices` parameter to `data`. The solution to this is to add that information to the trial `data` ourselves, and then on the next trial we can dig it out and use it. At the start of the step 1 trial we'll make a note of the order of the randomised labels (in `on_start`, straight after we randomise them). Then after the participant has made their selection (in `on_finish`), we'll use our knowledge of the order the buttons appeared and the info on which button they pressed to work out which *label* they selected, and record that in `data` too. Then in step 2 we can just retrieve that information. So our step 1 trial would look like this:
-
-```js
-var production_step1 = {
-  type: jsPsychImageButtonResponse,
-  stimulus: "images/object4.jpg",
-  choices: ["buv", "cal"], //dummy choices initially
-  on_start: function (trial) {
-    var shuffled_label_choices = jsPsych.randomization.shuffle(["buv", "cal"]);
-    trial.choices = shuffled_label_choices;
-    trial.data = { label_choices: shuffled_label_choices };
+var two_spr_trials =
+  [
+  {
+    type: jsPsychHtmlKeyboardResponse,
+    timeline: [
+      {
+        choices: [" "],
+        timeline: [
+          { stimulus: "Which" },
+          { stimulus: "events" },
+          { stimulus: "was" },
+          { stimulus: "the" },
+          { stimulus: "reporter" },
+          { stimulus: "describing" },
+          { stimulus: "with" },
+          { stimulus: "great" },
+          { stimulus: "haste?" },
+        ],
+      },
+      {
+        stimulus: "Did the reporter see what happened?",
+        prompt: "<p><em>Answer y for yes, n for no</em></p>",
+        choices: ["y", "n"],
+      },
+    ],
   },
-  on_finish: function (data) {
-    var button_number = data.response;
-    data.label_selected = data.label_choices[button_number];
+  {
+    type: jsPsychHtmlKeyboardResponse,
+    timeline: [
+      {
+        choices: [" "],
+        timeline: [
+          { stimulus: "Which" },
+          { stimulus: "building" },
+          { stimulus: "were" },
+          { stimulus: "the" },
+          { stimulus: "architects" },
+          { stimulus: "featuring" },
+          { stimulus: "in" },
+          { stimulus: "the" },
+          { stimulus: "portfolio?" },
+        ],
+      },
+      {
+        stimulus: "Did the architects have a portfolio?",
+        prompt: "<p><em>Answer y for yes, n for no</em></p>",
+        choices: ["y", "n"],
+      },
+    ],
   },
-};
+];
 ```
 
-The only thing that has changed about `on_start` is that we now add some info to the trial `data` - we create an entry called `label_choices` where we store the shuffled labels that are shown to the participant. Then we add an `on_finish` parameter, which looks up which button the participant pressed (`data.response` - the plugin records that automatically for us) and  combines that with the `data.label_choices` info we saved to work out what label they selected (`data.label_choices[button_number]` will return the 0th label in `label_choices` if they clicked button 0, the 1st label if they clicked button 1, etc) and save *that* info in the trial `data` too, as `data.label_selected`.
+So that's a list of two trials, both of which are identical in all their details except for the word list and the comprehension question. Building a long list of trials like that is definitely do-able, but is probably quite error prone - to change the word list or the comprehension question I have to jump into exactly the right spot in the nested timelines and change the right thing, and inevitably I will forget at some point or make a mistake (I made several mistakes just doing that when preparing these notes!). Plus it's an entirely mechanical process - if you know the sentence it's obvious how to slot it into our trial template - and computers are good at doing mechanical stuff methodically, so it makes more sense to automate this.
 
-Then the second step of the trial is fairly straightforward - when that trial starts (i.e. using `on_start` again) we can use a built-in jsPsych function to retrieve the `data` from the previous trial, then just read off the `label_selected` info we saved. That looks like this:
+What we'll do is use a little bit of javascript and write a function which
+takes a sentence and a comprehension question and uses our template to build a trial. It splits the sentence into an array of words (splitting the sentence at the spaces using a built-in javascript function called `split`), and then uses a little `for` loop to build the word-by-word stimulus list. Then it slots that word-by-word stimulus list plus the comprehension question into our trial template, and returns that trial.
 
-```js
-var production_step2 = {
-  type: jsPsychImageButtonResponse,
-  stimulus: "images/object4.jpg",
-  choices: [], //dummy choices initially
-  on_start: function (trial) {
-    var last_trial_data = jsPsych.data.get().last(1).values()[0];
-    var last_trial_label = last_trial_data.label_selected;
-    trial.choices = [last_trial_label];
-  },
-};
-```
-
-The only slightly intimidating part of that is the first line where we use `jsPsych.data.get().last(1).values()[0]` to access the last trial. `jsPsych.data.get()` is a jsPsych function that returns *all* the data from all trials so far, so we have to dig into it to get the last trial; that's what `last(1)` does - if you wanted to get the last 5 trials you could do that with e.g. `last(5)`. So that gives us the last trial, but that contains *a lot* of info we don't need so we dig out what we want using the `values()` function (I have no idea what all the other stuff saved there is to be honest), then that gives us a list of which we take the first item (which is what the `[0]` does), and at last we have our `data` from the last trial. In case you are wondering how I figured all that out: I didn't, it's in the [Dynamic parameters section](https://www.jspsych.org/7.3/overview/dynamic-parameters/) of the jsPsych overview, I just copied it and worked from there. Anyway, once we have our last trial data we just retrieve the info we want (which we saved under `label_selected`), then we set the choices for *this* trial to that label and we are done. Phew.
-
-Or nearly done. Of course doing every production trial as a sequence of 2 trials would be a pain, for all the usual reasons, so instead what we are going to do is wrap those two component trials up in a function that creates a complex trial with a nested timeline. But all the logic and the details are the same - we give the function the image and the label choices, and it builds us a complex trial. That's what is in the code below. I have made one tiny addition, which is to add some `block` information to the trial data for the crucial click-a-button part of this trial, just like I added `block` information to the observation trials above - this time I note that this is a production trial rather than an observation trial.
+Here's the function. I have called it `make_spr_trial` (spr = self-paced reading), and it takes two arguments (also sometimes known as *parameters*, e.g. in section 05 of the tutorial): a sentence to present word by word, and a yes-no comprehension question.
 
 ```js
-function make_production_trial(object, label_choices) {
-  var object_filename = "images/" + object + ".jpg";
+function make_spr_trial(sentence, comprehension_question) {
+  var sentence_as_word_list = sentence.split(" "); //split the sentence at spaces
+  var sentence_as_stimulus_sequence = []; //empty stimulus sequence to start
+  for (var word of sentence_as_word_list) {
+    //for each word in sentence_as_word_list
+    sentence_as_stimulus_sequence.push({ stimulus: word }); //add that word to sentence_as_stimulus_sequence in the required format
+  }
   var trial = {
-    type: jsPsychImageButtonResponse,
-    stimulus: object_filename,
+    type: jsPsychHtmlKeyboardResponse, //plug into our template
     timeline: [
-      //subtrial 1: show the two labelled buttons and have the participant select
+      { choices: [" "], 
+        timeline: sentence_as_stimulus_sequence },
       {
-        choices: label_choices, //these will be shuffled on_start
-        //at the start of the trial, randomise the left-right order of the labels
-        //and note that randomisation in data as label_choices
-        on_start: function (trial) {
-          var shuffled_label_choices =
-            jsPsych.randomization.shuffle(label_choices);
-          trial.choices = shuffled_label_choices;
-          trial.data = {
-            block: "production",
-            label_choices: shuffled_label_choices,
-          };
-        },
-        //at the end of the trial, use data.response to figure out
-        //which label they selected, and add that to data
-        on_finish: function (data) {
-          var button_number = data.response;
-          data.label_selected = data.label_choices[button_number];
-        },
-      },
-      //subtrial 2: show the image plus selected label, make the participant click that label
-      //(to re-center their mouse)
-      {
-        choices: [], //dummy choices to be over-written on_start
-        on_start: function (trial) {
-          //get the last trial response (the data generated by the button-click)
-          var last_trial_data = jsPsych.data.get().last(1).values()[0];
-          //look up the label_selected on that last trial
-          var last_trial_label = last_trial_data.label_selected;
-          trial.choices = [last_trial_label]; //this is your only choice
-        },
+        stimulus: comprehension_question,
+        choices: ["y", "n"],
+        prompt: "<p><em>Answer y or n</em></p>",
       },
     ],
   };
-  return trial;
+  return trial; //return the trial you have built
 }
+
 ```
 
-That is a fairly scary-looking bit of code, but hopefully you understand how the two sub-trials fit together now you have seen it built from scratch. If not, ask in labs!
-
-At long last we can build our list of production trials using this function - I'll take 5 trials, to test participants 5 times on the label for object 4, which I can also do with `jsPsych.randomization.repeat`.
+Now it is very easy to build multiple trials using this function. Note that the arguments we pass in - the sentence and the comprehension question - are strings, so enclosed in quotes. We create two trials, stored in variables `spr_trial_1` and `spr_trial_2`, that we will slot into our timeline.
 
 ```js
-var production_trial_object4 = make_production_trial('object4',['buv','cal']);
-var production_trials = jsPsych.randomization.repeat([production_trial_object4], 5);
-```
-
-### Building a timeline using concat
-
-The next bit of the code is the usual stuff with placeholders for consent and instructions, so I'll skip over that. The very final few lines of the code then build and run our timeline.
-
-For this experiment, when we build the timeline we use a javascript function called `concat`, which will generate a nice flat timeline of the sort jsPsych expects. 
-
-```js
-var full_timeline = [].concat(
-  consent_screen,
-  instruction_screen_observation,
-  observation_trials,
-  instruction_screen_production,
-  production_trials,
-  final_screen
+var spr_trial_1 = make_spr_trial(
+  "Which events was the reporter describing with great haste?",
+  "Did the reporter see what happened?"
+);
+var spr_trial_2 = make_spr_trial(
+  "Which building were the architects featuring in the portfolio?",
+  "Did the architects have a portfolio?"
 );
 ```
 
-What that essentially says is "take an empty array (`[]`) and then concatenate (add) to it whatever is in the variables `consent_screen` `instruction_screen_observation`, `observation_trials`, etc.
+### Other bits and pieces, including collecting demographics
 
-You might be wondering why we can't do something like this, which has worked in the past:
+As usual, your experiment will need a consent screen and some instruction screens. Those bits are basically the same as last week so I won't bother showing the code here, but note that jsPsych provides [an instructions plugin](https://www.jspsych.org/7.3/plugins/instructions/) which might be better if you were providing several pages of instructions.
+
+For this experiment I have also added a trial (just before our very final `final_screen` trial) where we collect some additional info from the participant. Often you want to collect demographic information from your participants - e.g. age, gender, whether they are a native speaker of some language - and give them the opportunity to provide free-text comments (e.g. in case there is a problem with your experiment that they have noticed). In general you shouldn't collect data you don't actually need - it wastes the participants' time, potentially means you are storing unnecessary personal information about your participants, and also opens up various temptations at analysis time ("Hmm, this experiment doesn't looked like it worked, how boring. But wait! If I split it by gender and age, which I collected for no real reason, then I get a weird pattern of significant results, maybe I can pretend I predicted that all along and publish this?"). Plus Prolific already has gender and age data for your participants (we'll show you how to access that in the final week), so you don't need to collect it yourself. So don't feel you always need to include the exact questions I have put here, these are just some examples of how to collect some common response types. 
+
+The [survey-html-form](https://www.jspsych.org/7.3/plugins/survey-html-form/) plugin provides a way to mix various response types on a single form - in this example I am going to include a radio-button response (select one from a number of options), a text-box response that only accepts numbers, and a larger text box for more open comments. But there are lots of other options - if you are wondering "can I do X?", look at the documentation for the [input](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input), [textarea](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/textarea) and [select](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select) tags.
+
+We include our demographics questionnaire by creating a single trial - note that it has `type: jsPsychSurveyHtmlForm`, and in my html file I therefore have to load the appropriate plugin (line 8 of `self_paced_reading.html` does that).
 
 ```js
-var full_timeline = 
-[
+var demographics_form = {
+  type: jsPsychSurveyHtmlForm,
+  preamble:
+    "<p style='text-align:left'> Please answer a few final questions about yourself and our experiment.</p>",
+  html: "<p style='text-align:left'>Are you a native speaker of English?<br>  \
+            <input type='radio' name='english' value='yes'>yes<br>\
+            <input type='radio' name='english' value='no'>no<br></p> \
+        <p style='text-align:left'>What is your age? <br> \
+            <input required name='age' type='number'></p> \
+        <p style='text-align:left'>Any other comments?<br> \
+            <textarea name='comments'rows='10' cols='60'></textarea></p>",
+};
+```
+
+The interesting stuff happens in the `html` parameter of this trial, so I'll break that down for you. Once again this is a string (enclosed in double quotes) that includes some HTML markup tags. The simplest part of that is the bit of code that collects the age info:
+
+```js
+"<p style='text-align:left'>What is your age? <br> \
+    <input required name='age' type='number'></p>"
+```
+
+So it's a paragraph (enclosed in `<p> ... </p>`), and I have used `style='text-align:left'` to make it left-justified so it doesn't look too awful. There's a question ("What is your age?"), then a `<br>` tag to produce a line break. Then `<input required name='age' type='number'>` creates an input field, which will be referred to as `age` in our code (that's how it appears in the results, as you will see later), and we tell it that this trial is of the `number` type, which lets the browser know how to display it (e.g. if we swap `type='number'` for `type='text'` then you lose the little scroller to increase/decrease the number). The `required` flag means that this response has to be provided - your participants will not be allowed to progress unless they provide a response. You can similarly make radio buttons, check boxes and text area inputs required (in the same way, by adding this `required` flag), but use it sparingly - e.g. if you make an open-ended comment obligatory that is likely to annoy people.
+
+The comments box is the same idea, but instead of using an `<input>` tag we are using `<textarea><\textarea>`. Note that there is nothing between those tags - if you put in some text (e.g. `<textarea>Initial text<\textarea>`) then that would appear in your textbox without needing to be typed in by the participant, which is not really useful for us here. We can also specify the size of the box in rows and columns - people often take their cue about the length of the response desired based on the size of the box.
+
+The radio buttons (yes vs no for "Are you a native speaker of English?") are slightly more complex. The relevant part looks like this:
+
+```js
+"<input type='radio' name='english' value='yes'>yes<br>\
+<input type='radio' name='english' value='no'>no<br>"
+```
+
+So that is two input fields, one for yes and one for no, but they have the same name (`name='english'`). The browser knows in those circumstances to only allow people to select *one* option from among those options that share the same name. Then we have `value='yes'` for the yes input and `value='no'` for the no input - this is the response *that will be recorded* depending on which button the participant selects (if you leave the `value` bit out then the code records a very unhelpful answer of "english=on", i.e. it just tells you that the participant answered the question but not which answer they gave). Then finally we have the text that appears alongside the button, yes and no respectively, with a `<br>` in between the buttons to make it look nice.
+
+### The full timeline
+
+The full timeline for this simple 2-trial experiment then looks like this:
+
+```js
+var full_timeline = [
   consent_screen,
-  instruction_screen_observation,
-  observation_trials,
-  instruction_screen_production,
-  production_trials,
-  final_screen
+  instruction_screen_1,
+  spr_trial_1,
+  spr_trial_2,
+  demographics_form,
+  final_screen,
 ];
 ```
-The problem is that our variables we are sticking together includes a mix of individual trials (e.g. `consent_screen`) and *lists* of trials (e.g. `observation_trials`). That is going to confuse jsPsych - it wants everything in the experiment timeline to be trial, so it can consult its `type` property and know what to do, and it doesn't know what to do when it gets to a list of trials, so it throws an error and breaks. We can get round this by using concat, which allows us to stitch together individual trials and lists of trials in a way that makes our life easy but keeps jsPsych happy.
 
-### Saving data
+And then we use `jsPsych.run` to run it. Next week I'll show you how to do something a bit more useful with the data these experiments generate, i.e. save it as a CSV file.
 
-As usual, when we finish (so using the `on_finish` parameter of `initJsPsych`, right at the top of the code) we are going to display the data on the screen. But we also want to save the data to a csv file on the server. There are three new lines of code to do that.
+## Exercises with the self-paced reading experiment code
 
-```js
-var jsPsych = initJsPsych({
-  on_finish: function () {
-    var all_data = jsPsych.data.get(); //get all data
-    var all_data_as_csv = all_data.csv(); //convert to csv format
-    save_data("wordlearning_data.csv", all_data_as_csv); //save it
-    jsPsych.data.displayData("csv"); //and also dump the data to screen
-  },
-});
-```
+Attempt these problems. After the practical you will be able to consult [some notes on the answers](oels_practical_wk4_notes.md), but note that this link won't function until after the class - as usual, we want you to try this stuff yourself!
 
-That uses two jsPsych functions to get the trial data, concert it to CSV format, then finally we use the `save_data` function (copied directly from section 06 of Alisdair's tutorial code, although I use a slightly different format for function names so I changed the name from `saveData` to `save_data`) to save that data to the server in a file called  `wordlearning_data.csv` - if you run the code on the jspsychlearning server you should see there is a file called `wordlearning_data.csv` in the folder called `server_data`, which is at quite a high level in your directory structure (you might have to jump up a few levels in the directory structure to find that folder). Note also that cyberduck doesn't automatically refresh the list of files when a new file is added, so you may have to click the "Refresh" button to see your data file. Every time you run the code it will append more data to that file, so if you have run the code a few times it might look quite messy!
+- How would you add extra trials to this code, i.e. additional sentences and related comprehension questions? 
+- Add another demographics question, e.g. a text box to list other languages spoken, or some additional radio buttons with more than 2 options.
+- Have a look at the data that is displayed at the end of the experiment. Can you see where the stimulus for each trial is recorded? Can you see where the crucial reaction time data for each trial is recorded? Can you see how the demographics data is recorded? Can you work out what the "internal_node_id" column is doing (which looks like e.g. "0.0-2.0-0.0-0.0" ... "0.0-2.0-0.0-1.0 ... "0.0-2.0-0.0-2.0")?
+- If you were going to analyse this kind of data, you would need to pull out the relevant trials (i.e. the ones involving self-paced reading, and comprehension questions). Is it going to be easy to do that based on the kind of output the code produces? How would you identify those trials? If you were particularly interested in certain words in certain contexts, is it going to be easy to pull those trials out of the data the code produces?
+- [Optional, very challenging] An alternative to self-paced reading is the Maze task (e.g. Forster et al., 2009; Boyce et al., 2020); like self-paced reading your participants work through a sentence word by word, but unlike in self-paced reading at each step they chose one of two continuations for the sentence (see image below from Boyce et al., 2020 - G-Maze refers to mazes where the distractors are English words which would be ungrammatical continuations, L-maze has non-word distractors). Can you convert the self-paced reading code to run as a maze task? For each word presentation you will need an alternative continuation, and some way of the participant selecting their continuation (e.g. keyboard? button?). Maze tasks also don't feature comprehension questions so you can drop those (the idea is that selecting the correct continuation throughout shows you are paying attention). Mazes also abort the sentence when the participant makes a mistake - we haven't covered this yet and it is somewhat tricky, so I would suggest skipping this feature of the maze for now, but is possible using `on_finish` and  `jsPsych.endCurrentTimeline` (see explanation and example in [core jsPsych documentation](https://www.jspsych.org/7.3/reference/jspsych/). If you decide to have a go at this task (you have been warned, it's tricky!), you can then take a look at [my thoughts on how it could be done](oels_practical_wk4_maze.md).
 
-## Exercises with the word learning experiment code
+![mazes](images/mazes.jpg)
 
-Attempt these problems. After the practical you will be able to consult [some notes on the answers](oels_practical_wk6_notes.md)
 
-- Run the code on the server once and look at the `wordlearning_data.csv` file to make sure it makes sense to you. If you have already run the code several times that file might be quite messy, in which case you can delete it and run the code again to get a cleaner view. 
-- Run the code several times and look at the `wordlearning_data.csv` file - you might have to refresh it on cyberduck to see the latest data. Make sure you understand what happens to this data file every time you run the code. If you had multiple participants doing this experiment, what would you *like* to happen, and roughly how would you achieve that?
-- It's possible to *filter* the data before saving it, e.g. grabbing only the trials where we marked `{block: "observation"}` or `{block: "production"}` - this is explained in Section 06 of Alisdair's tutorial, or you can look at [the jsPsych documentation on aggregating and manipulating data](https://www.jspsych.org/7.3/overview/data/#aggregating-and-manipulating-jspsych-data). Can you figure out how to change the `on_finish` for `initJsPsych` so that it only saves the observation and production trial data to the server?
-- The code here is for the low-load linguistic version of the Ferdinand et al. (2019) experiment, with 1 object. How would you modify the code to do something with higher load, e.g. 2 or 3 objects, each with 2 labels? You could either do a blocked design (participants see several objects but the observation or production trials are organised such that all the trials for one object are together, then all the trials for the next object are together), or a fully-randomised presentation (i.e. you do all the observation trials, then all the production trials, but all the objects are interspersed randomly within each phase).
-- Ferdinand et al. (2019) also have a *non-linguistic* version of the same experiment, where rather than words labelling objects participants observed coloured marbles being drawn from a bag (there were no fancy animations, it was just a picture of a marble above a picture of a bag), then produced some more marble draws themselves by clicking on buttons labelled with images of coloured marbles. You don't have to implement it, but think about what sorts of changes would you need to make to the word learning code to implement this non-linguistic version? We'll see some of these tools in next week's practical.
-- [Optional, hard] Can you figure out how to use the `jsPsych.randomization.shuffleNoRepeats` function [documented here](https://www.jspsych.org/7.3/reference/jspsych-randomization/#jspsychrandomizationshufflenorepeats) to do a version where observation and test trials for multiple objects are interspersed, but you never see the same object twice in a row? NB this will only work if you have 3+ different objects in the experiment - it's too hard for the code to find randomisations with no repeats if you have a small number of objects, and impossible if you only have one object, so the code will hang while  endlessly searching! Once you have attempted this, you can look at [my thoughts on how it could be done](oels_practical_wk6_norepeat.md).
+
+
 
 ## References
 
-[Ferdinand, V., Kirby, S., & Smith, K. (2019). The cognitive roots of regularization in language.
-*Cognition, 184,* 53-68.](https://doi.org/10.1016/j.cognition.2018.12.002)
+[Boyce, V., Futrell, R., & Levy, R. P. (2020). Maze Made Easy: Better and easier measurement of incremental processing difficulty.
+*Journal of Memory and Language, 111,* 104082.](https://doi.org/10.1016/j.jml.2019.104082)
+
+[Enochson, K., & Culbertson, J. (2015). Collecting Psycholinguistic Response Time Data Using Amazon Mechanical Turk.
+*PLoS ONE, 10,* e0116946.](https://doi.org/10.1371/journal.pone.0116946)
+
+[Forster, K. I., Guerrera, C., & Elliot, L. (2009). The maze task: Measuring forced incremental sentence processing time.
+*Behavior Research Methods, 41,* 163-171.](https://doi.org/10.3758/BRM.41.1.163)
 
 ## Re-use
 
