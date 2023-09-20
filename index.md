@@ -63,16 +63,16 @@ There will be no classes in week 2 due to strike action.
 
 - *Scientific content:* lab vs online data collection
 - *Technical content:* more jsPsych and javascript basics
-- [Reading](oels_reading_wk2.md)
-- [Programming task](oels_practical_wk2.md)
+- [Reading](oels_reading_wk3.md)
+- [Programming task](oels_practical_wk3.md)
 - Lecture slides to appear here
 
 ### Week 4 (9th October): Grammaticality judgements
 
 - *Scientific content:* lab vs online grammaticality judgments; syntactic processing and acceptability
 - *Technical content:* simple key- and button-press responses
-- [Reading](oels_reading_wk3.md)
-- [Programming task](oels_practical_wk3.md)
+- [Reading](oels_reading_wk4.md)
+- [Programming task](oels_practical_wk4.md)
 - Lecture slides to appear here
 
 ### Week 5 (16th October): Lab catchup week
@@ -83,7 +83,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 
 - *Scientific content:* processing costs of syntactic dependencies
 - *Technical content:* collecting reaction time data, more complex nested trials
-- [Reading](oels_reading_wk4.md)
+- [Reading](oels_reading_wk6.md)
 - Programming task to appear here
 - Lecture slides to appear here
 
@@ -92,7 +92,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 
 - *Scientific content:* probability matching and regularisation
 - *Technical content:* using trial data for contingent trials, saving data
-- [Reading](oels_reading_wk6.md)
+- [Reading](oels_reading_wk7.md)
 - Programming task to appear here
 - Lecture slides to appear here
 
@@ -100,7 +100,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 
 - *Scientific content:* speech perception, social influences on phonetic adaptation
 - *Technical content:* Audio, trial data again, preloading stimuli, saving data trial by trial
-- [Reading](oels_reading_wk7.md)
+- [Reading](oels_reading_wk8.md)
 - Programming task to appear here
 - Lecture slides to appear here
 
@@ -116,7 +116,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 
 - *Scientific content:* iterated learning and the evolution of compositional structure
 - *Technical content:* looping trials, reading trial lists from CSVs again, PHP scripts for iteration
-- [Reading](oels_reading_wk9.md)
+- [Reading](oels_reading_wk10.md)
 - Programming task to appear here
 - Lecture slides to appear here
 
@@ -132,7 +132,7 @@ No lecture or lab in week 11, but there are some materials that will be useful f
 
 - *Scientific content:* least effort and Zipf's Law of Abbreviation
 - *Technical content:* web sockets, python servers, incrementally building a timeline
-- [Reading](oels_reading_wk10.md)
+- [Reading](oels_reading_wkna.md)
 - Programming task to appear here
 
 ### Bonus content

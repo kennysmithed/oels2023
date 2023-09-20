@@ -1,32 +1,28 @@
 ---
 title: Week 4 reading
-description: Self-paced reading
+description: Grammaticality judgments
 ---
 
 ## The plan for week 4
 
-This week we are looking at a paper on self-paced reading (Enochsen & Culbertson, 2015), then in this week's practical you'll get a chance to look at a simple self-paced reading experiment in jsPsych. 
+Now we have worked through some preliminaries, we'll move on to some more interesting content, seeing how people have used online data collection to answer linguistic questions and playing with code to allow us to do the same.
 
-In a self-paced reading experiment participants read sentences word by word. The measure of interest involves looking at where they are slowed down, with slowing indicating processing difficulties and potentially telling us something about e.g. lexical representations or the structure of the grammar involved. 
-
+We'll start by looking at grammaticality judgments - not because I am especially interested in syntax, but because this is a very simple sort of data to collect (in its simplest form, simple yes/no responses on whether or not a particular sentence could be produced by a native speaker), so coding it up is going to be easy. We'll look at a paper published in 2011, in the early days of widespread use of online data collection, which verifies that 'traditional' in-lab judgments match those collected online from MTurk. Then in this week's practical you'll get a chance to look at some very simple jsPsych code for a grammaticality judgment experiment.
 
 ## Reading tasks for this week
 
 Read:
-- [Enochson, K., & Culbertson, J. (2015). Collecting Psycholinguistic Response Time Data Using Amazon Mechanical Turk.
-*PLoS ONE, 10,* e0116946.](https://doi.org/10.1371/journal.pone.0116946)
+- [Sprouse, J. (2011). A validation of Amazon Mechanical Turk for the collection of acceptability judgments in linguistic theory.
+*Behavior Research Methods, 43,* 155-167.](https://doi.org/10.3758/s13428-010-0039-7)
 
-As you read this paper make notes of any questions, criticisms or ideas it gives you, and I'll leave time in the Monday lecture slot so we can discuss these in class.
+As you read this paper make notes of any questions, criticisms or ideas it gives you, and I'll leave time in the Monday lecture slot so we can discuss these in class. 
 
 A couple of things to note as you work through the paper:
-- Similarly to last week's reading on grammaticality judgments, this is another "does it replicate on MTurk?" paper - this will be the last of these for a while, the next few papers we will look at happen to use online data collection, but are not primarily motivated by that.
-- The second author, [Prof Jenny Culbertson](https://jennifer-culbertson.github.io), is based in Linguistics at Edinburgh now, doing very interesting work on learning, use, and language typology.
-- This is a slightly older MTurk paper, so the rate of pay ($1 for 20 minutes) is way below what we would typically pay now.
-- The paper mentions other options for RT experiments - Webexp, ibex farm - and they use something called ScriptingRT which generates a Flash movie. Flash is a dead format now, unsupported by most/all modern browsers, and ibex farm shut down in 2021 - I don't know about Webexp, but we are going to be doing this stuff in jsPsych.
-- The plots and statistics in the paper use *residual reading time* rather than raw reading time - this is a way of extracting factors that vary systematically across participants (e.g. fast vs slow readers) and words (e.g. long vs short words), to leave a cleaner signal of the reading time effects you are interested in. As you'd expect, positive residual reading time means a particular word is read relatively slowly, negative residual reading time indicates it is read relatively quickly.  
-- For Experiment 2 there is focus on running exactly 82 participants. Being in the right ballpark is nice for comparability, but it's usually not important to run *exactly* the same number, and sometimes (e.g. if you think the original study didn't run enough) you might actively want to diverge from the study you are replicating.
-- Enochson & Culbertson recommend using the Masters qualification on MTurk as a way of improving data quality. I have never used it - MTurk substantially increased their fees since this paper was written, and the Masters qualification costs extra on top, plus I was concerned about who exactly has the Masters qualification (e.g. are they unusually non-naive participants?). But there are other ways to select more reliable workers on MTurk (and indeed on Prolific), which we will cover in the final week of the course - I always set a minimum number of completed HITs/experiments and a minimum acceptance rate to weed out really flaky participants. I don't know if this substantially improves the quality of the data but it definitely reduces the number of emails you field from participants who time out on your experiment, have some unfortunate episode occur which prevents them from completing it, etc. 
-- Enochson & Culbertson recommend running small batches on MTurk. I actually find that very small batches (e.g. 4-5 assignments) go more slowly, but batch size on MTurk influences the fees they charge (batches of 10+ assignments are charged at a higher rate), so I normally end up running multiple batches of 9. On Prolific batch size doesn't affect costs.
+- Sprouse uses text boxes for a magnitude estimation task - participants are asked to numerically score sentences for grammaticality. In this week's practical we'll start by looking at a simpler task where you simply give a yes/no decision, purely because that's an easier place to start with the code.
+- Note that Sprouse reports paying his online participants less than his lab participants - see comments in [last week's reading](oels_reading_wk3.md) and the lecture about pay on MTurk and generally low rates.
+- Sprouse's technique for dealing with repeat participants is not ideal - he allows participants to take the experiment multiple times, but then rejects repeat entries. This is bad because it potentially results in people inadvertently participating repeatedly and yet not being paid; also, rejections affect workers' ratings on MTurk which restricts the tasks they can access, so people tend to get quite upset if you reject their submission. I'm not sure what the situation was when Sprouse was conducting this study, but nowadays there are actually straightforward ways to prevent people from participating repeatedly. On Prolific repeat participation in a single study is blocked automatically and there's a simple exclusion option to block people who have already taken a related study in the prescreener; on MTurk you can use the qualifications system, awarding a qualification to people who complete your study and requiring that people *not* have this qualification to participate. Using one of these options means that nobody wastes their time and participates repeatedly for no pay, you don't have to filter out repeat participants and deal with upset people - in short, don't use the allow-then-reject procedure that Sprouse reports.
+- Sprouse gives a long list of limitations of online data collection at the end of the paper, including technical limitations around audio, reaction times, randomisation. The technology has moved on since Sprouse wrote the paper, and jsPsych is going to handle all these problems for us. His other remarks on e.g. verifying that participants understand the task still stand of course.
+
 
 ## Re-use
 
