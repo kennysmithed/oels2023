@@ -149,7 +149,7 @@ Aislinn will be available on Teams in weeks 1-3 at the tikmes listed below to do
 
 Aislinn will be available on Teams:
 - Thursday 21st September, 2pm-3pm
-- Thursday 28th September, 2pm-3pm
+- ~~Thursday 28th September, 2pm-3pm~~ Cancelled due to strikes
 - Thursday 5th October, 2pm-3pm
 
 We will provide some extra drop-in labs to give you an opportunity to get some help with your code for the final assignment. Obviously we won't write your code for you, but if you are having trouble interpreting an error message or finding a bug or want some tips on how to achieve a particular effect we can help you figure it out. Note that these are not compulsory, and they are drop-ins not extra labs - the idea is that you come along, ask a couple of questions, then go away. Dates and times TBC, but these will begin roughly 2 weeks before the final assessment is due.
