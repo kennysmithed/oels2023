@@ -145,7 +145,7 @@ I am sticking some extra documented experiments I have created here, in case the
 
 ### Additional drop-in labs
 
-Aislinn will be available on Teams in weeks 1-3 at the tikmes listed below to do a short drop-in lab to catch people who joined the course late and missed the lab, or need a bit of extra support in the early stages of the course. See the course Learn page for instructions on how to access the drop-in labs on Teams. Note that these are not compulsory, and they are drop-ins not extra labs - the idea is that you come along, ask a couple of questions, then go away.
+Aislinn will be available on Teams in weeks 1-3 at the times listed below to do a short drop-in lab to catch people who joined the course late and missed the lab, or need a bit of extra support in the early stages of the course. See the course Learn page for instructions on how to access the drop-in labs on Teams. Note that these are not compulsory, and they are drop-ins not extra labs - the idea is that you come along, ask a couple of questions, then go away.
 
 Aislinn will be available on Teams:
 - Thursday 21st September, 2pm-3pm
