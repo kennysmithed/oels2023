@@ -167,8 +167,6 @@ function make_maze_trial(sentence_distractor_pairs) {
 };
 ```
 
-
-
 You can download all the code for this implementation through the following two links:
 - <a href="code/maze/maze_pairs.html" download> Download maze_pairs.html</a>
 - <a href="code/maze/maze_pairs.js" download> Download maze_pairs.js</a>

@@ -84,7 +84,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - *Scientific content:* processing costs of syntactic dependencies
 - *Technical content:* collecting reaction time data, more complex nested trials
 - [Reading](oels_reading_wk6.md)
-- Programming task to appear here
+- [Programming task](oels_practical_wk6.md)
 - Lecture slides to appear here
 
 
