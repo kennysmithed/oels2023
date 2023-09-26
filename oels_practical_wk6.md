@@ -62,42 +62,59 @@ The way to do this in jsPsych is to have multiple trials per sentence: one trial
 We *could* do this all manually, and just specify a long trial list like this:
 
 ```js
-var spr_trial_the_basic_way = [
-{type: jsPsychHtmlKeyboardResponse,
+var spr_trial_the_basic_way_1 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:'Which',
-  choices: [' ']},
-{type: jsPsychHtmlKeyboardResponse,
+  choices: [' ']
+};
+var spr_trial_the_basic_way_2 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:'events',
-  choices: [' ']},
-{type: jsPsychHtmlKeyboardResponse,
+  choices: [' ']
+};
+var spr_trial_the_basic_way_3 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:'was',
-  choices: [' ']},
-{type: jsPsychHtmlKeyboardResponse,
+  choices: [' ']
+};
+var spr_trial_the_basic_way_4 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:'the',
-  choices: [' ']},
-{type: jsPsychHtmlKeyboardResponse,
+  choices: [' ']
+};
+var spr_trial_the_basic_way_5 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:'reporter',
-  choices: [' ']},
-{type: jsPsychHtmlKeyboardResponse,
+  choices: [' ']
+};
+var spr_trial_the_basic_way_6 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:'describing',
-  choices: [' ']},
-{type: jsPsychHtmlKeyboardResponse,
+  choices: [' ']
+};
+var spr_trial_the_basic_way_7 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:'with',
-  choices: [' ']},
-{type: jsPsychHtmlKeyboardResponse,
+  choices: [' ']};
+var spr_trial_the_basic_way_8 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:'great',
-  choices: [' ']},
-{type: jsPsychHtmlKeyboardResponse,
+  choices: [' ']
+};
+var spr_trial_the_basic_way_9 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:'haste?',
-  choices: [' ']},
-{type: jsPsychHtmlKeyboardResponse,
+  choices: [' ']
+};
+var spr_trial_the_basic_way_10 = {
+  type: jsPsychHtmlKeyboardResponse,
   stimulus:"Did the reporter see what happened?",
   prompt:"<p><em>Answer y for yes, n for no</em></p>",
-  choices:['y','n']}
-];
+  choices:['y','n']
+};
 ```
 
-That will present the sentence "Which events was the reporter describing with great haste?" one word at a time, waiting for a spacebar response after each word, then present a y/n comprehension question at the end. This is perfectly OK and will present the sentences as intended. However, it is quite unwieldy - there is lots of redundant information (we have to specify every time the trial type, the spacebar input), building the trial list for a long experiment with hundreds of sentences is going to be very error prone, and it would be impossible to randomise the order without messing everything up horribly!
+If we add those 10 trials into our experiment timeline in the correct order, that will present the sentence "Which events was the reporter describing with great haste?" one word at a time, waiting for a spacebar response after each word, then present a y/n comprehension question at the end. This is perfectly OK and will present the sentences as intended. However, it is quite unwieldy - there is lots of redundant information (we have to specify every time the trial type, the spacebar input), building the trial list for a long experiment with hundreds of sentences is going to be very error prone, and it would be impossible to randomise the order without messing everything up horribly!
 
 Thankfully jsPsych provides a nice way around this. A slightly more sophisticated solution involves using nested timelines (explained under *Nested timelines* in [the relevant part of the jsPsych documentation](https://www.jspsych.org/7.3/overview/timeline/#nested-timelines): we create a trial which has its own timeline, and then that timeline is expanded into a series of trials, one trial per item
 in the timeline (so each of these complex trials functions a bit like its own stand-alone embedded experiment with its own timeline). We can use nested timelines to form a more compressed representation of the long trial sequence above and get rid of some of the redundancy.
@@ -105,34 +122,32 @@ in the timeline (so each of these complex trials functions a bit like its own st
 The simplest way to do this is to split the long sequence for a single self-paced reading trial into a pair of trials: the self-paced reading part, which has its own nested timeline of several words, and then the comprehension question. That would look like this:
 
 ```js
-var spr_trial_using_nested_timeline = [
-  {
-    type: jsPsychHtmlKeyboardResponse,
-    choices: [" "],
-    timeline: [
-      { stimulus: "Which" },
-      { stimulus: "events" },
-      { stimulus: "was" },
-      { stimulus: "the" },
-      { stimulus: "reporter" },
-      { stimulus: "describing" },
-      { stimulus: "with" },
-      { stimulus: "great" },
-      { stimulus: "haste?" },
-    ],
-  },
-  {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: "Did the reporter see what happened?",
-    prompt: "<p><em>Answer y for yes, n for no</em></p>",
-    choices: ["y", "n"],
-  },
-];
+var spr_trial_using_nested_timeline_sentence = {
+  type: jsPsychHtmlKeyboardResponse,
+  choices: [" "],
+  timeline: [
+    { stimulus: "Which" },
+    { stimulus: "events" },
+    { stimulus: "was" },
+    { stimulus: "the" },
+    { stimulus: "reporter" },
+    { stimulus: "describing" },
+    { stimulus: "with" },
+    { stimulus: "great" },
+    { stimulus: "haste?" },
+  ],
+};
+var spr_trial_using_nested_timeline_comprehension = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: "Did the reporter see what happened?",
+  prompt: "<p><em>Answer y for yes, n for no</em></p>",
+  choices: ["y", "n"],
+};
 ```
 
-`spr_trial_using_nested_timeline` is a list of two trials (those two trials are enclosed in square brackets `[...]`, because that's how we represent lists). The first trial is an `html-keyboard-response` trial, which accepts space as the only valid input, and which has a nested timeline specifying the only thing that differs between the sub-trials, the `stimulus` - each item in the nested timeline gets the `type` and `choices` parameters from its parent, and differs only in its `stimulus`, so when the nested timeline is run we end up with our sentence presented in a sequence of 9 trials. Then the second trial in `spr_trial_using_nested_timeline` is the comprehension question, another `html-keyboard-response` trial just looking for a y-n response.
+So that's two trials rather than 10. The first trial, which I am calling `spr_trial_using_nested_timeline_sentence`, is an `html-keyboard-response` trial, which accepts space as the only valid input, and which has a nested timeline specifying the only thing that differs between the sub-trials, the `stimulus` - each item in the nested timeline gets the `type` and `choices` parameters from its parent, and differs only in its `stimulus`, so when the nested timeline is run we end up with our sentence presented in a sequence of 9 trials. Then the second trial (`spr_trial_using_nested_timeline_comprehension`) is the comprehension question, another `html-keyboard-response` trial just looking for a y-n response.
 
-I find that quite clear to look at, but you'll notice that there's still some redundancy (we have to specify twice that type is `jsPsychHtmlKeyboardResponse`). Plus our trial list, `spr_trial_using_nested_timeline`, is just producing a flat array of reading trials then a comprehension question - you could imagine that if we extended that to contain e.g. 6 sentence presentations and 6 questions, and if we wanted to randomise the order somehow, we might accidentally separate a sentence and its comprehension question.
+I find that quite clear to look at, but you'll notice that there's still some redundancy (we have to specify twice that type is `jsPsychHtmlKeyboardResponse`). Plus our timeline is just going to be a flat list with a mix of reading trials and comprehension questions - you could imagine that if we extended that to contain e.g. 6 sentence presentations and 6 questions, and if we wanted to randomise the order somehow, we might accidentally separate a sentence and its comprehension question.
 
 There is an even more compressed way of representing this trial sequence, which looks like this:
 
@@ -170,60 +185,57 @@ It's important to emphasise that these three ways of representing a self-paced r
 Nested trial lists therefore make it quite easy to build a single self-paced reading trial. However, it's still going to be a bit laborious to build a sequence of such trials. In order to build two trials we'd have to do something like this:
 
 ```js
-var two_spr_trials =
-  [
-  {
-    type: jsPsychHtmlKeyboardResponse,
-    timeline: [
-      {
-        choices: [" "],
-        timeline: [
-          { stimulus: "Which" },
-          { stimulus: "events" },
-          { stimulus: "was" },
-          { stimulus: "the" },
-          { stimulus: "reporter" },
-          { stimulus: "describing" },
-          { stimulus: "with" },
-          { stimulus: "great" },
-          { stimulus: "haste?" },
-        ],
-      },
-      {
-        stimulus: "Did the reporter see what happened?",
-        prompt: "<p><em>Answer y for yes, n for no</em></p>",
-        choices: ["y", "n"],
-      },
-    ],
-  },
-  {
-    type: jsPsychHtmlKeyboardResponse,
-    timeline: [
-      {
-        choices: [" "],
-        timeline: [
-          { stimulus: "Which" },
-          { stimulus: "building" },
-          { stimulus: "were" },
-          { stimulus: "the" },
-          { stimulus: "architects" },
-          { stimulus: "featuring" },
-          { stimulus: "in" },
-          { stimulus: "the" },
-          { stimulus: "portfolio?" },
-        ],
-      },
-      {
-        stimulus: "Did the architects have a portfolio?",
-        prompt: "<p><em>Answer y for yes, n for no</em></p>",
-        choices: ["y", "n"],
-      },
-    ],
-  },
-];
+var spr_trial_1 = {
+  type: jsPsychHtmlKeyboardResponse,
+  timeline: [
+    {
+      choices: [" "],
+      timeline: [
+        { stimulus: "Which" },
+        { stimulus: "events" },
+        { stimulus: "was" },
+        { stimulus: "the" },
+        { stimulus: "reporter" },
+        { stimulus: "describing" },
+        { stimulus: "with" },
+        { stimulus: "great" },
+        { stimulus: "haste?" },
+      ],
+    },
+    {
+      stimulus: "Did the reporter see what happened?",
+      prompt: "<p><em>Answer y for yes, n for no</em></p>",
+      choices: ["y", "n"],
+    },
+  ],
+};
+var spr_trial_2 = {
+  type: jsPsychHtmlKeyboardResponse,
+  timeline: [
+    {
+      choices: [" "],
+      timeline: [
+        { stimulus: "Which" },
+        { stimulus: "building" },
+        { stimulus: "were" },
+        { stimulus: "the" },
+        { stimulus: "architects" },
+        { stimulus: "featuring" },
+        { stimulus: "in" },
+        { stimulus: "the" },
+        { stimulus: "portfolio?" },
+      ],
+    },
+    {
+      stimulus: "Did the architects have a portfolio?",
+      prompt: "<p><em>Answer y for yes, n for no</em></p>",
+      choices: ["y", "n"],
+    },
+  ],
+};
 ```
 
-So that's a list of two trials, both of which are identical in all their details except for the word list and the comprehension question. Building a long list of trials like that is definitely do-able, but is probably quite error prone - to change the word list or the comprehension question I have to jump into exactly the right spot in the nested timelines and change the right thing, and inevitably I will forget at some point or make a mistake (I made several mistakes just doing that when preparing these notes!). Plus it's an entirely mechanical process - if you know the sentence it's obvious how to slot it into our trial template - and computers are good at doing mechanical stuff methodically, so it makes more sense to automate this.
+So that's two trials that we'd add to our experiment timeline, both of which are identical in all their details except for the word list and the comprehension question. Building a long list of trials like that is definitely do-able, but is probably quite error prone - to change the word list or the comprehension question I have to jump into exactly the right spot in the nested timelines and change the right thing, and inevitably I will forget at some point or make a mistake (I made several mistakes just doing that when preparing these notes!). Plus it's an entirely mechanical process - if you know the sentence it's obvious how to slot it into our trial template - and computers are good at doing mechanical stuff methodically, so it makes more sense to automate this.
 
 What we'll do is use a little bit of javascript and write a function (you can refresh your memory on functions from [the relevant section of Alisdair's tutorial](https://softdev.ppls.ed.ac.uk/online_experiments/05_javascript.html#functions)) which
 takes a sentence and a comprehension question and uses our template to build a trial. It splits the sentence into an array of words (splitting the sentence at the spaces using a built-in javascript function called `split`), and then uses a little `for` loop to build the word-by-word stimulus list. Then it slots that word-by-word stimulus list plus the comprehension question into our trial template, and returns that trial.
