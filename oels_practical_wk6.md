@@ -59,7 +59,7 @@ As you may have figured out already, each individual trial in a self-paced readi
 
 The way to do this in jsPsych is to have multiple trials per sentence: one trial for each word in that sentence, and then a final trial for the comprehension question. These are all `type: jsPsychHtmlKeyboardResponse` - for the word-by-word presentation we just want the participant to hit spacebar to progress, then we will make the comprehension question a yes/no answer (basically just like in the grammaticality judgments code from last week).
 
-We *could* do this all manually, and just specify a long trial list like this:
+We *could* do this all manually, and just specify a whole bunch of trials like this:
 
 ```js
 var spr_trial_the_basic_way_1 = {
@@ -114,7 +114,7 @@ var spr_trial_the_basic_way_10 = {
 };
 ```
 
-If we add those 10 trials into our experiment timeline in the correct order, that will present the sentence "Which events was the reporter describing with great haste?" one word at a time, waiting for a spacebar response after each word, then present a y/n comprehension question at the end. This is perfectly OK and will present the sentences as intended. However, it is quite unwieldy - there is lots of redundant information (we have to specify every time the trial type, the spacebar input), building the trial list for a long experiment with hundreds of sentences is going to be very error prone, and it would be impossible to randomise the order without messing everything up horribly!
+If we add those 10 trials into our experiment timeline (in the correct order!) that will present the sentence "Which events was the reporter describing with great haste?" one word at a time, waiting for a spacebar response after each word, then present a y/n comprehension question at the end. This is perfectly OK and will present the sentences as intended. However, it is quite unwieldy - there is lots of redundant information (we have to specify every time the trial type, the spacebar input), building the trial list for a long experiment with hundreds of sentences is going to be very error prone, and it would be impossible to randomise the order without messing everything up horribly!
 
 Thankfully jsPsych provides a nice way around this. A slightly more sophisticated solution involves using nested timelines (explained under *Nested timelines* in [the relevant part of the jsPsych documentation](https://www.jspsych.org/7.3/overview/timeline/#nested-timelines): we create a trial which has its own timeline, and then that timeline is expanded into a series of trials, one trial per item
 in the timeline (so each of these complex trials functions a bit like its own stand-alone embedded experiment with its own timeline). We can use nested timelines to form a more compressed representation of the long trial sequence above and get rid of some of the redundancy.
