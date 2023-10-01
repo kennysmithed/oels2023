@@ -5,6 +5,8 @@ description: Audio, trial data again, preloading stimuli, saving data to the ser
 
 # The plan for week 7 practical
 
+**Add conditional trial in here, to filter participants? Not related to paper but would be handy.**
+
 This week we are going to look at code for a perceptual learning experiment based on the experiment described in Levi-Ari (2017) (and in fact using her stims, see below). There's no new material to look at in the Online Experiments with jsPsych tutorial. 
 
 This experiment involves audio stimuli, which we haven't worked with before, but jsPsych has plugins for audio so that is fairly straightforward. In our implementration we are also going to reuse some code from the word learning experiment to handle randomisation of button positions and using `data` to keep track of which buttons appeared where. The main new things we'll introduce (in addition to audio stimuli, but jsPsych makes that very easy) are:
