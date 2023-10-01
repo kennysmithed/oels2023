@@ -65,7 +65,7 @@ There will be no classes in week 2 due to strike action.
 - *Technical content:* more jsPsych and javascript basics
 - [Reading](oels_reading_wk3.md)
 - [Programming task](oels_practical_wk3.md)
-- Lecture slides to appear here
+- [Lecture slides](slides/oels_lecture_wk3.pdf)
 
 ### Week 4 (9th October): Grammaticality judgements
 
