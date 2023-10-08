@@ -73,7 +73,7 @@ There will be no classes in week 2 due to strike action.
 - *Technical content:* simple key- and button-press responses
 - [Reading](oels_reading_wk4.md)
 - [Programming task](oels_practical_wk4.md)
-- Lecture slides to appear here
+- [Lecture slides](slides/oels_lecture_wk4.pdf)
 
 ### Week 5 (16th October): Lab catchup week
 
