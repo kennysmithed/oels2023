@@ -85,7 +85,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - *Technical content:* collecting reaction time data, more complex nested trials
 - [Reading](oels_reading_wk6.md)
 - [Programming task](oels_practical_wk6.md)
-- Lecture slides to appear here
+- [Lecture slides](slides/oels_lecture_wk6.pdf)
 
 
 ### Week 7 (30th October): Word learning / frequency learning
