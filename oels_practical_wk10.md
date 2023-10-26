@@ -1,9 +1,9 @@
 ---
-title: Week 9 practical
+title: Week 10 practical
 description: looping trials, reading trial lists from CSVs again, PHP scripts for iteration
 ---
 
-# The plan for week 9 practical
+# The plan for week 10 practical
 
 This week we are going to look at code for an iterated learning experiment, a simplified version of the experiment described in Beckner et al. (2017). 
 

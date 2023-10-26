@@ -1,35 +1,35 @@
 ---
-title: Week 6 practical
+title: Week 7 practical
 description: Using trial data for contingent trials, saving data to the server
 ---
 
 # The plan for week 7 practical
 
-This week we are going to look at a bit more of the [Online Experiments with jsPsych tutorial](https://softdev.ppls.ed.ac.uk/online_experiments/index.html), and then look at code for a simple word learning / frequency learning experiment based on the Ferdinand et al. (2019) paper we read this week. Our implementation of this experiment builds on the self-paced reading experiment in that it uses nested timelines and functions to construct trials which have a fairly complex structure (although you can implement it more simply than that). It also requires randomisation and contingent trials (what the participant sees on one trial depends on what they did at the previous trial), so we need to introduce some infrastructure to do that. Finally, I'll add some code to save data on the server at the end of the experiment, rather than just dumping it to the screen.
+This week we are going to look at a bit more of the [Online Experiments with jsPsych tutorial](https://softdev.ppls.ed.ac.uk/online_experiments/index.html), and then look at code for a simple word learning / frequency learning experiment based on the Ferdinand et al. (2019) paper we read this week. Our implementation of this experiment builds on the self-paced reading experiment in that it uses nested timelines and functions to construct trials which have a fairly complex structure (although you can implement it more simply than that). It also requires randomisation and contingent trials (what the participant sees on one trial depends on what they did at the previous trial), so we need to introduce some infrastructure to do that. Finally, I'll add some code to save data on the server at the end of the experiment, rather than just dumping it to the screen. *Note that saving the data at the end of the experiment is not the best way to do it!* See the note on that below.
 
-Remember, as usual the idea is that you can work through these practicals in the lab classes and, if necessary, in your own time - I recommend you use the lab classes as dedicated time to focus on the practicals, with on-tap support from the teaching team, but if you don't get through everything in lab time you should do at least some work in your own time to keep up to speed. There is quite a lot of new technical content this week, next week will be less intense!
+There is quite a lot of new technical content this week, next week will be less intense! Remember, as usual the idea is that you can work through these practicals in the lab classes and, if necessary, in your own time - I recommend you use the lab classes as dedicated time to focus on the practicals, with on-tap support from the teaching team, but if you don't get through everything in lab time you should do at least some work in your own time to keep up to speed. 
 
 # Tutorial content
 
-Read through [section 06 of the Online Experiments with jsPsych tutorial](https://softdev.ppls.ed.ac.uk/online_experiments/06_data.html) - you can stop when you get to the section titled "Sending the data line by line" since we'll cover this next week and we'll be using a slightly different technique than Alisdair covers in his tutorial. You don't need to do the exercises dotted through the tutorial, since we will see the same bits of code in the word learning experiment. The key things you need to take away from the tutorial are:
+Read through [section 06 of the Online Experiments with jsPsych tutorial](https://softdev.ppls.ed.ac.uk/online_experiments/06_data.html) - you can stop when you get to the section titled "Sending the data line by line" since we'll cover this next week and we'll be using a slightly different technique than Alisdair covers in his tutorial. You don't need to do the exercises dotted through that tutorial, since we will see the same bits of code in the word learning experiment. The key things you need to take away from the tutorial are:
 - You don't have to understand the details of how the POST and PHP stuff works to save the data, just that it's possible and it works.
-- You can save data to the server either at the end of the experiment, which is what I have implemented in the word learning code, or after every trial (which we will get to later in the course). **Saving data trial-by-trial is better**, so if you need to write code where you actually care about reliably getting the data (e.g. for a dissertation project) we recommend you use that method once we have shown it to you. Waiting to the end of the experiment to save the data can be risky, because if there's a technical glitch you might not get any data at all (and those glitches can happen frequently - e.g. we have had students who have had problems with this on Prolific, due to the method by which participants get redirected to Prolific after they complete your study, which interferes with saving the data). Plus if you save data trial-by-trial, then if a participant contacts you to tell you they got part-way through the experiment then their computer died you can actually verify this, pay them accordingly and also have some of their data. So the save-at-the-end method we are showing you today is inferior, but it's slightly simpler, and we are trying to introduce the complexity incrementally. 
+- You can save data to the server either at the end of the experiment, which is what I have implemented in the word learning code, or after every trial (which we will get to next week). **Saving data trial-by-trial is better**, so if you need to write code where you actually care about reliably getting the data (e.g. for a dissertation project) we recommend you use that method once we have shown it to you. Waiting to the end of the experiment to save the data can be risky, because if there's a technical glitch you might not get any data at all (and those glitches can happen frequently - e.g. we have had students who have had problems with this on Prolific, due to the method by which participants get redirected to Prolific after they complete your study, which interferes with saving the data). Plus if you save data trial-by-trial, then if a participant contacts you to tell you they got part-way through the experiment then their computer died you can actually verify this, pay them accordingly and also have some of their data. So the save-at-the-end method we are showing you today is inferior, but it's slightly simpler, and we are trying to introduce the complexity incrementally. 
 - The `data` property of jsPsych trials. Each trial has a `data` parameter which is populated by the code automatically depending on what the participant does during the trial - e.g. on an `html-button-response` trial it records the index of the button the participant pressed (0 for the first choice, 1 for the second choice, etc) in `data.response`. But we can also add to the `data` parameter ourselves - we can add information about the participant to every trial (e.g. their ID number), or we can add specific bits of data to certain trials (in the tutorial Alisdair gives the example of marking up trial type to allow you to separate 'boring' trials from important ones). In the word learning experiment we'll use the same technique to mark up important trials for later data filtering, but we'll also use the `data` property to record which label the participant clicked on (rather than just the button index, which is recorded automatically under `data.response`), which we can then use to handle cases where the response at one trial affects what happens at the next trial.
 
 # A word learning experiment
 
 ## First: you build it!
 
-As with last week, we'd like to give you an opportunity to try to build (parts of) this word-learning experiment yourself. As with last week, to help you get started, we are going to provide you with a couple of templates to fill in - an html file that loads some of the plugins you will need (but once you decide what additional plugins you need you will have to load them too), then a javascript file where you can put your own code. That javascript file includes some extra stuff (instructions, saving data to the server) that we pre-built for you so you can focus on the more interesting parts of the experiment.
+As with last week, we'd like to give you an opportunity to try to build (parts of) this word-learning experiment yourself. As with last week, to help you get started, we are going to provide you with a couple of templates to fill in - an html file that loads some of the plugins you will need (but once you decide what additional plugins you need you will have to load them too, e.g. by copying the appropriate script line from the plugin documentation), then a javascript file where you can put your own code. That javascript file includes some extra stuff (instructions, saving data to the server) that we pre-built for you so you can focus on the more interesting parts of the experiment.
 
-You are actually going to need a bunch of files for this experiment - the html and javascript templates for your attempt (which we are calling `my_word_learning.html` and `my_word_learning.js`), the html  and js file for our implementation (`word_learning.html` and `word_learning.js`), but also a php file (for saving data) and a folder containing a bunch of images. Rather than downloading these separately, download the following zip file and then uncompress it into your usual jsPsych folder, in a folder called something like `word_learning`, alongside your `grammaticality_judgments` and `self_paced_reading` folders. :
+You are actually going to need a bunch of files for this experiment - the html and javascript templates for your attempt (which we are calling `my_word_learning.html` and `my_word_learning.js`), the html and js file for our implementation (`word_learning.html` and `word_learning.js`), but also a php file (for saving data) and a folder containing a bunch of images. Rather than downloading these separately, download the following zip file and then uncompress it into your usual jsPsych folder, in a folder called something like `word_learning`, alongside your `grammaticality_judgments` and `self_paced_reading` folders. :
 - <a href="code/word_learning.zip" download> Download word_learning.zip</a>
 
-This code should run on your local computer or you can upload the whole `word_learning` folder to the `public_html` folder on the jspsychlearning server and play with it there. Note that the code for that saves the data to the server will only work if your code is actually running on the jspsychlearning server - if you are running it on your own computer the data will not save anywhere, although it will still be shown on-screen. This is because your personal computer isn't running anything that can handle POST commands and process them with PHP, which is what is involved in saving data - those things are all set up on the jspsychlearning server for you. So if you haven't already got to grips with putting your code on the server, try it now. Here's what my `public_html/online_experiments_practicals/` folder currently looks like on cyberduck.
+This code should run on your local computer or you can upload the whole `word_learning` folder to the `public_html` folder on the jspsychlearning server and play with it there. Note that the code for that saves the data to the server will only work if your code is actually running on the jspsychlearning server - if you are running it on your own computer the data will not save anywhere, although it will still be shown on-screen. This is because your personal computer isn't running anything that can handle POST commands and process them with PHP, which is what is involved in saving data - those things are all set up on the jspsychlearning server for you. So if you haven't already got to grips with putting your code on the server, try it now and get help in the lab if you need it. Here's what my `public_html/online_experiments_practicals/` folder currently looks like on cyberduck.
 
 ![suggested directory structure](images/wl_directory_structure.png)
 
-If your directory structure is the same as mine the url for your experiment will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/word_learning/my_word_learning.html where UUN is your UUN. If you want to see what the finished experiment will look like, you can run the `word_learning.html` file which includes our final implementation - if you put everything on jspsychlearning, the URL will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/word_learning/word_learning.html. Remember that if you look at the data display at the end that will include spoilers on how to write the code yourself, so depending on how much you want to challenge yourself you might want to avoid clicking through to the data! 
+If your directory structure is the same as mine the url for your experiment will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/word_learning/my_word_learning.html where UUN is your UUN. If you want to see what the finished experiment will look like, you can run the `word_learning.html` file which includes our final implementation - if you put everything on jspsychlearning, the URL will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/word_learning/word_learning.html, or [you can run my copy on jspsychlearning](https://jspsychlearning.ppls.ed.ac.uk/~ksmith7/online_experiments_practicals/word_learning/word_learning.html). Remember that if you look at the data display at the end that will include spoilers on how to write the code yourself, so depending on how much you want to challenge yourself you might want to avoid clicking through to the data! 
 
 If you run through our implementation of the experiment you'll see that, in addition to the usual instructions, the experiment consists of two stages: *observation* and *production*.  Observation trials involve presentation of an object plus a label; production trials prompt the participant to select a label for an object. In a little more detail:
 
@@ -121,7 +121,7 @@ var observation_object4_only = {
   trial_duration: 1000,
 };
 ```
-Note that just including `prompt: " "` doesn't work, the code correctly identifies the fact that the prompt is empty, we have to include some content there. 
+Note that just including `prompt: " "` doesn't work, we have to include some content there. 
 
 The more important problem with this simple approach, like I said in connection with the self-paced reading experiment, is that building this flat timeline is going to be very laborious and redundant for an experiment involving more than a few observation trials, and quite error prone (even just writing out this little example I forgot to change the `prompt` for the second trial from "buv" to "cal", which might end up being an important mistake in a frequency-learning experiment), and there is no easy way to randomise the trial list without hopelessly scrambling everything.
 
@@ -194,24 +194,24 @@ var production_step1 = {
 
 That is very simple, but the labels will always appear in the same order - buv on the left, cal on the right. That might be a problem - maybe people will be biased to click on one side, or maybe this will encourage them to always click on the same side and given very self-consistent responses just because they are being lazy. So we want to randomise the order of the buttons, and we want to do this *independently* for every trial, so that sometimes buv is on the left and sometimes it's on the right.
 
-There are a couple of ways you could do this in jsPsych. I am going to do it using the `on_start` property of trials. This allows us to specify some code to run when the trial starts but before anything is displayed on screen, and importantly the stuff that happens in `on_start` can alter the other trial properties. Specifically, initially we'll start off with `choices` in a fixed order (it will complain if we try to leave `choices` unspecified, so we have to set it to *something*, it might as well be this, or we could do an empty array `[]` if you prefer) and then generate a random ordering of the labels in the `on_start`.
+There are a couple of ways you could do this in jsPsych. I am going to do it using the `on_start` property of trials. This allows us to specify some code to run when the trial starts but before anything is displayed on screen, and importantly the stuff that happens in `on_start` can alter the other trial properties. Specifically, initially we'll start off with empty `choices` (it will complain if we try to leave `choices` unspecified, so we have to set it to *something*) and then generate a random ordering of the labels in the `on_start`.
 
 ```js
 var production_step1 = {
   type: jsPsychImageButtonResponse,
   stimulus: "images/object4.jpg",
-  choices: ["buv", "cal"], //dummy choices initially
+  choices: [], //dummy choices initially
   on_start: function (trial) {
-    var shuffled_label_choices = jsPsych.randomization.shuffle(["buv", "cal"]);
-    trial.choices = shuffled_label_choices;
+    var shuffled_labels = jsPsych.randomization.shuffle(["buv", "cal"]);
+    trial.choices = shuffled_labels;
   },
 };
 ```
 
-Inside `on_start` we shuffle the two labels, using another  randomisation function provided by jsPsych, [jsPsych.randomization.shuffle](https://www.jspsych.org/7.3/reference/jspsych-randomization/#jspsychrandomizationshuffle), which will randomise the order of items in a list we give it. We can then set the trial's `choices` parameter to that shuffled ordering (overwriting the fixed order we started with) with the code 
+Inside `on_start` we shuffle the two labels, using another randomisation function provided by jsPsych, [jsPsych.randomization.shuffle](https://www.jspsych.org/7.3/reference/jspsych-randomization/#jspsychrandomizationshuffle), which will randomise the order of items in a list we give it. We can then set the trial's `choices` parameter to that shuffled ordering (overwriting the dummy choices we started with) with the code 
 
 ```js
-trial.choices = shuffled_label_choices;
+trial.choices = shuffled_labels;
 ```
 
 So by the time the participant actually sees the choices on the screen, `on_start` will already have done its work and the two buttons will appear in a randomised order.
@@ -226,9 +226,9 @@ var production_step1 = {
   stimulus: "images/object4.jpg",
   choices: ["buv", "cal"], //dummy choices initially
   on_start: function (trial) {
-    var shuffled_label_choices = jsPsych.randomization.shuffle(["buv", "cal"]);
-    trial.choices = shuffled_label_choices;
-    trial.data = { label_choices: shuffled_label_choices };
+    var shuffled_labels = jsPsych.randomization.shuffle(["buv", "cal"]);
+    trial.choices = shuffled_labels;
+    trial.data = { label_choices: shuffled_labels };
   },
   on_finish: function (data) {
     var button_number = data.response;
@@ -259,7 +259,7 @@ The only slightly intimidating part of that is the first line where we use `jsPs
 Or nearly done. Of course doing every production trial as a sequence of 2 trials would be a pain, for all the usual reasons, so instead what we are going to do is wrap those two component trials up in a function that creates a complex trial with a nested timeline. But all the logic and the details are the same - we give the function the image and the label choices, and it builds us a complex trial. That's what is in the code below. I have made one tiny addition, which is to add some `block` information to the trial data for the crucial click-a-button part of this trial, just like I added `block` information to the observation trials above - this time I note that this is a production trial rather than an observation trial.
 
 ```js
-function make_production_trial(object, label_choices) {
+function make_production_trial(object, labels) {
   var object_filename = "images/" + object + ".jpg";
   var trial = {
     type: jsPsychImageButtonResponse,
@@ -267,16 +267,16 @@ function make_production_trial(object, label_choices) {
     timeline: [
       //subtrial 1: show the two labelled buttons and have the participant select
       {
-        choices: label_choices, //these will be shuffled on_start
+        choices: [], //dummy choices to be over-written on_start
         //at the start of the trial, randomise the left-right order of the labels
         //and note that randomisation in data as label_choices
         on_start: function (trial) {
-          var shuffled_label_choices =
-            jsPsych.randomization.shuffle(label_choices);
-          trial.choices = shuffled_label_choices;
+          var shuffled_labels =
+            jsPsych.randomization.shuffle(labels);
+          trial.choices = shuffled_labels;
           trial.data = {
             block: "production",
-            label_choices: shuffled_label_choices,
+            label_choices: shuffled_labels,
           };
         },
         //at the end of the trial, use data.response to figure out
@@ -301,7 +301,7 @@ function make_production_trial(object, label_choices) {
     ],
   };
   return trial;
-}
+};
 ```
 
 That is a fairly scary-looking bit of code, but hopefully you understand how the two sub-trials fit together now you have seen it built from scratch. If not, ask in labs!
@@ -366,14 +366,14 @@ That uses two jsPsych functions to get the trial data, concert it to CSV format,
 
 ## Exercises with the word learning experiment code
 
-Attempt these problems. After the practical you will be able to consult [some notes on the answers](oels_practical_wk6_notes.md)
+Attempt these problems. After the practical you will be able to consult [some notes on the answers](oels_practical_wk7_notes.md)
 
 - Run the code on the server once and look at the `wordlearning_data.csv` file to make sure it makes sense to you. If you have already run the code several times that file might be quite messy, in which case you can delete it and run the code again to get a cleaner view. 
-- Run the code several times and look at the `wordlearning_data.csv` file - you might have to refresh it on cyberduck to see the latest data. Make sure you understand what happens to this data file every time you run the code. If you had multiple participants doing this experiment, what would you *like* to happen, and roughly how would you achieve that?
+- Run the code several times and look at the `wordlearning_data.csv` file - you might have to refresh it on cyberduck to see the latest data. Make sure you understand what happens to this data file every time you run the code. If you had multiple participants doing this experiment, what would you *like* to happen, and how would you achieve that? You don;t have to write any code, just think about the outcome you would like to achieve and what it would require.
 - It's possible to *filter* the data before saving it, e.g. grabbing only the trials where we marked `{block: "observation"}` or `{block: "production"}` - this is explained in Section 06 of Alisdair's tutorial, or you can look at [the jsPsych documentation on aggregating and manipulating data](https://www.jspsych.org/7.3/overview/data/#aggregating-and-manipulating-jspsych-data). Can you figure out how to change the `on_finish` for `initJsPsych` so that it only saves the observation and production trial data to the server?
 - The code here is for the low-load linguistic version of the Ferdinand et al. (2019) experiment, with 1 object. How would you modify the code to do something with higher load, e.g. 2 or 3 objects, each with 2 labels? You could either do a blocked design (participants see several objects but the observation or production trials are organised such that all the trials for one object are together, then all the trials for the next object are together), or a fully-randomised presentation (i.e. you do all the observation trials, then all the production trials, but all the objects are interspersed randomly within each phase).
-- Ferdinand et al. (2019) also have a *non-linguistic* version of the same experiment, where rather than words labelling objects participants observed coloured marbles being drawn from a bag (there were no fancy animations, it was just a picture of a marble above a picture of a bag), then produced some more marble draws themselves by clicking on buttons labelled with images of coloured marbles. You don't have to implement it, but think about what sorts of changes would you need to make to the word learning code to implement this non-linguistic version? We'll see some of these tools in next week's practical.
-- [Optional, hard] Can you figure out how to use the `jsPsych.randomization.shuffleNoRepeats` function [documented here](https://www.jspsych.org/7.3/reference/jspsych-randomization/#jspsychrandomizationshufflenorepeats) to do a version where observation and test trials for multiple objects are interspersed, but you never see the same object twice in a row? NB this will only work if you have 3+ different objects in the experiment - it's too hard for the code to find randomisations with no repeats if you have a small number of objects, and impossible if you only have one object, so the code will hang while  endlessly searching! Once you have attempted this, you can look at [my thoughts on how it could be done](oels_practical_wk6_norepeat.md).
+- Ferdinand et al. (2019) also have a *non-linguistic* version of the same experiment, where rather than words labelling objects participants observed coloured marbles being drawn from a bag (there were no fancy animations, it was just a picture of a marble above a picture of a bag), then produced some more marble draws themselves by clicking on buttons labelled with images of coloured marbles. You don't have to implement it, but think about what sorts of changes would you need to make to the word learning code to implement this non-linguistic version. We'll see some of these tools in next week's practical.
+- [Optional, hard] Can you figure out how to use the `jsPsych.randomization.shuffleNoRepeats` function [documented here](https://www.jspsych.org/7.3/reference/jspsych-randomization/#jspsychrandomizationshufflenorepeats) to do a version where observation and test trials for multiple objects are interspersed, but you never see the same object twice in a row? NB this will only work if you have 3+ different objects in the experiment - it's too hard for the code to find randomisations with no repeats if you have a small number of objects, and impossible if you only have one object, so the code will hang while  endlessly searching! Once you have attempted this, you can look at [my thoughts on how it could be done](oels_practical_wk7_norepeat.md).
 
 ## References
 

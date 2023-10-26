@@ -1,9 +1,9 @@
 ---
-title: Week 7 practical
+title: Week 8 practical
 description: Audio, trial data again, preloading stimuli, saving data to the server trial by trial
 ---
 
-# The plan for week 7 practical
+# The plan for week 8 practical
 
 **Add conditional trial in here, to filter participants? Not related to paper but would be handy.**
 
@@ -67,7 +67,7 @@ Our implementation of the perceptual learning experiment in `perceptual_learning
 
 ### Social network questionnaire
 
-[The full set of questions is available in the supporting information of Lev-Ari (2017)](https://doi.org/10.1371/journal.pone.0183593.s005). As you can see, there are various text-box questions which are easy enough to implement in jsPsych using the `survey-html-form` plugin (look again at the end of [the week 4 practical](oels_practical_wk4.md)). In the code I have only implemented the first three questions, which all require numeric answers:
+[The full set of questions is available in the supporting information of Lev-Ari (2017)](https://doi.org/10.1371/journal.pone.0183593.s005). As you can see, there are various text-box questions which are easy enough to implement in jsPsych using the `survey-html-form` plugin (look again at the end of self-paced reading practical). In the code I have only implemented the first three questions, which all require numeric answers:
 
 ```js
 var social_network_questionnaire = {
