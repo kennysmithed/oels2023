@@ -93,7 +93,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - *Scientific content:* probability matching and regularisation
 - *Technical content:* using trial data for contingent trials, saving data
 - [Reading](oels_reading_wk7.md)
-- Programming task to appear here
+- [Programming task](oels_practical_wk7.md)
 - Lecture slides to appear here
 
 ### Week 8 (6th November): Audio stimuli
