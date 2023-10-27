@@ -94,7 +94,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - *Technical content:* using trial data for contingent trials, saving data
 - [Reading](oels_reading_wk7.md)
 - [Programming task](oels_practical_wk7.md)
-- Lecture slides to appear here
+- [Lecture slides](slides/oels_lecture_wk7.pdf)
 
 ### Week 8 (6th November): Audio stimuli
 
