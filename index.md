@@ -133,7 +133,7 @@ No lecture or lab in week 11, but there are some materials that will be useful f
 - *Scientific content:* least effort and Zipf's Law of Abbreviation
 - *Technical content:* web sockets, python servers, incrementally building a timeline
 - [Reading](oels_reading_wkna.md)
-- Programming task to appear here
+- [Programming task from last year's version of the course](https://kennysmithed.github.io/oels2022/oels_practical_wk10.html)
 
 ### Bonus content
 
