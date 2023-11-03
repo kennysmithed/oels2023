@@ -102,7 +102,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - *Technical content:* Audio, trial data again, preloading stimuli, saving data trial by trial
 - [Reading](oels_reading_wk8.md)
 - [Programming task](oels_practical_wk8.md)
-- Lecture slides to appear here
+- [Lecture slides](slides/oels_lecture_wk8.pdf)
 
 ### Week 9 (13th November): Priming and overspecification
 
