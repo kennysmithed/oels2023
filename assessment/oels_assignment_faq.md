@@ -52,6 +52,18 @@ Yes! Here are 2 high-scoring assignments from last year's class, plus the marker
 
 Yes absolutely! As long as we can tell what you have in mind then that's fine - the assessment is mainly about justifying a particular kind of experiment (in the report) and then putting that together in jsPsych (the actual code), not so much about producing professional-quality stimuli, so as long as we can tell what you intended then placeholders are fine.
 
+### Is the word limit for the report strict?
+
+Yes it is - we will deduct marks if you go over the word limit.
+
+## Does the word limit for the report include the references section?
+
+No it doesn't - we don't want to penalise you for reading and citing lots of relevant work.
+
+## Does the word limit for the report include footnotes?
+
+Yes it does - I never want to read 5000 words of footnotes.
+
 ## Re-use
 
 All aspects of this work are licensed under a [Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/).
