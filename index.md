@@ -107,7 +107,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 ### Week 9 (13th November): Priming and overspecification
 
 - *Scientific content:* Priming and overspecification
-- *Technical content:*  Audio recording, custom preload lists, reading trial lists from CSV
+- *Technical content:*  Audio recording, custom preload lists, conditional timelines, reading trial lists from CSV
 - [Reading](oels_reading_wk9.md)
 - Programming task to appear here
 - Lecture slides to appear here
