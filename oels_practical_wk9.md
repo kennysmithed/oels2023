@@ -5,7 +5,7 @@ description: Audio recording, more randomisation stuff, custom preload lists, co
 
 # The plan for week 9 practical
 
-This week we are going to look at code for a confederate priming experiment based on the experiment described in Loy & Smith (2021) (and in fact using our stimuli). There's no new material to look at in the Online Experiments with jsPsych tutorial. We are also going to add a few more bits and pieces involving randomisation (random participant IDs, random wait durations to simulate a human partner), we'll build a custom preload list to make sure our button images are preloaded before the experiment starts (using an alternative technique to the one used in the answer to one of the harder questions from last week), we'll show you how to include a conditional timeline (trials that only run if the participant gave a certain response on a previous trial), and finally I'll show how to load a trial list from a CSV file (handy if you want to use a pre-built trial list).
+This week we are going to look at code for a confederate priming experiment based on the experiment described in Loy & Smith (2021) (and in fact using our stimuli). We are also going to add a few more bits and pieces involving randomisation (random participant IDs, random wait durations to simulate a human partner), we'll build a custom preload list to make sure our button images are preloaded before the experiment starts (using an alternative technique to the one used in the answer to one of the harder questions from last week), we'll show you how to include a conditional timeline (trials that only run if the participant gave a certain response on a previous trial), and finally I'll show how to load a trial list from a CSV file (handy if you want to use a pre-built trial list).
 
 
 # Acknowledgments
@@ -18,7 +18,7 @@ For this demo experiment we are using audio stims recorded by my RA Rachel Kinde
 
 As with last week, we'd like to give you an opportunity to try to build (parts of) this experiment yourself, and we'll provide you with a template that we pre-built for you so you can focus on the more interesting parts of the experiment.
 
-You need a bunch of files for this experiment - html and js files for several versions of the experiment, *two* php files (for saving CSV and audio data, and also reading in trial lists), plus various folders containing images, sounds, trial lists etc. Again, rather than downloading them individually, download the following zip file:
+You need a bunch of files for this experiment - html and js files for several versions of the experiment, *two* php files (for saving CSV and audio data), plus various folders containing images, sounds, trial lists etc. Again, rather than downloading them individually, download the following zip file:
 - <a href="code/confederate_priming.zip" download> Download confederate_priming.zip</a>
 
 As usual, extract this and copy the folder into your practicals folder on the jspsychlearning server - since data (including audio) won't save if you run it locally, by this point you really want to be at least testing everything on the jspsychlearning server. Furthermore, there are a couple of things to note before you can run our implementation of the code:
@@ -36,9 +36,9 @@ If you run through our implementation of the experiment you'll see that the expe
 
 We are interested in whether, on critical trials featuring an opportunity to produce an unnecessary colour word, the descriptions produced by the confederate (which consistently overspecify or avoid overspecifying) influences the descriptions the participant produces.
 
-Implementing something like this in full involves some technical steps you haven't seen yet, in particular recording audio and displaying stimuli which consist of pairs of images. The current version of jsPsych provides one plugin for audio responses, html-audio-response - this is currently in development, so it doesn't work perfectly (see our comments below), but you can have a go at implementing this experiment in full, recording audio and all, or just try to get something that looks along the right lines (hearing the confederate speak and selecting from two pictures; seeing a picture and clicking a mic button) without worrying about the audio recording at this point. And if you'd rather just jump to our implementation to see how we do it, that's fine.
+Implementing something like this in full involves some technical steps you haven't seen yet, in particular recording audio and displaying stimuli which consist of pairs of images. The current version of jsPsych provides one plugin for audio responses, `html-audio-response`` - this is currently in development, so it doesn't work perfectly (see our comments below), but you can use it to have a go at implementing this experiment in full, recording audio and all. Or you can just try to get something that looks along the right lines (hearing the confederate speak and selecting from two pictures; seeing a picture and clicking a mic button) without worrying about the audio recording at this point. And if you'd rather just jump to our implementation to see how we do it, that's fine.
 
-The sound files and images you will want to play around with are in the `sounds` and `images` folders that you get in the zip file. Note that the audio and image files have quite abstract names - this was something that Jia came up with that made it easy for her to manage a large list of image files. You can look in the images and sounds folders to work this out, but to help you:
+The sound files and images you will want to play around with are in the `sounds` and `images` folders that you get in the zip file. Note that the audio and image files have quite abstract names - this was something that Jia came up with that made it easy for her to manage a large list of paired image and audio files. You can look in the images and sounds folders to work this out, but to help you:
 
 For images:
 
@@ -62,9 +62,9 @@ There are actually two implementations of the experiment included in the zip fil
 - A short version with a small number of trials. The code for this is in `confederate_priming.html` and `confederate_priming.js`, and the URL will be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/confederate_priming/confederate_priming.html if your directory structure is as suggested in previous weeks. This is the code I will start with in the explanation below.
 - A full-length version with a large number of trials (100+). The code for this is in `confederate_priming_readfromcsv.html` and `confederate_priming_readfromcsv.js`, and the URL should be https://jspsychlearning.ppls.ed.ac.uk/~UUN/online_experiments_practicals/confederate_priming/confederate_priming_readfromcsv.html. If you want a longer demo you can run this, but the main purpose of including the second version is to show you how a long trial list can be read in from a CSV file.
 
-Picture selection trials in our implementation work in essentially the same way as picture selection trials in the perceptual learning experiment, using the `audio-button-response` plugin. 
+Picture selection trials in our implementation work in essentially the same way as picture selection trials in the perceptual learning experiment, using the `audio-button-response` plugin, so not much new stuff there. 
 
-The main part of the picture description trial is an `html-audio-response` trial (with an `html-button-response` trial beforehand, so the participant clicks on a mic button to start recording. We are using `html-audio-response` (i.e. an html stimulus) for several reasons. Firstly, that's the only audio response plugin currently available in jsPsych! There is no `image-audio-response` plugin yet, although I imagine there will be in the next version. Secondly, our picture description trials involve presenting two side-by-side images, one highlighted with a green box, and it turns out it is easier to do this using an html stimulus rather than an image stimulus - this is explained below! Since the `html-audio-response` is new it's not quite as slick as the more established plugins though, which means things look a little scrappy and, at the time of writing, there is a small bug in the plugin. It's not disastrous, but if you wanted a different way to record audio you could consult [the equivalent practical from last year](https://kennysmithed.github.io/oels2022/oels_practical_wk8.html), which doesn't use the audio response plugin.
+The main part of the picture description trial is an `html-audio-response` trial (with an `html-button-response` trial beforehand, so the participant clicks on a mic button to enter the audio response trial and start recording). One reason we are using `html-audio-response` (i.e. an html stimulus, even though our stimulus involves images) is that that's the only audio response plugin currently available in jsPsych! There is no `image-audio-response` plugin yet, although I imagine that will be added soon. But in fact it works out quite nicely, because our picture description trials involve presenting two side-by-side images, one highlighted with a green box, and it turns out it is easier to do this using an html stimulus rather than an image stimulus - this is explained below! Since the `html-audio-response` is new it's not quite as slick as the more established plugins though, which means things look a little scrappy and, at the time of writing, there is a small bug in the plugin. It's not disastrous, but if you wanted a different way to record audio you could consult [the equivalent practical from last year](https://kennysmithed.github.io/oels2022/oels_practical_wk8.html), which doesn't use the audio response plugin.
 
 We also simulate the confederate preparing to speak and making a selection based on the participant's productions by inserting variable-duration delays at appropriate points. The full experiment also included disfluencies etc (you can see some of the sound files for those if you go digging in the `sounds` folder) but we'll keep it simple here.
 
@@ -127,7 +127,7 @@ function make_picture_selection_trial(sound, target_image, foil_image) {
     trial_duration: wait_duration,
     response_ends_trial: false, //just ignore any clicks the participant makes here!
     button_html:
-      '<button class="jspsych-btn"> <img src="images/%choice%.png" width=250px></button>',
+      '<button class="jspsych-btn"> <img src="images/%choice%.png" style="width:250px"></button>',
   };
   //audio trial
   var selection_trial = {
@@ -136,7 +136,7 @@ function make_picture_selection_trial(sound, target_image, foil_image) {
     prompt: "<p><em>Click on the picture your partner described</em></p>",
     choices: shuffled_image_choices,
     button_html:
-      '<button class="jspsych-btn"> <img src="images/%choice%.png" width=250px></button>',
+      '<button class="jspsych-btn"> <img src="images/%choice%.png" style="width:250px"></button>',
     post_trial_gap: 500, //a little pause after the participant makes their choice
     on_start: function (trial) {
       trial.data = {
@@ -196,30 +196,31 @@ Our random wait is then an `audio-button-response` trial, where the participant 
     trial_duration: wait_duration,
     response_ends_trial: false, //just ignore any clicks the participant makes here!
     button_html:
-      '<button class="jspsych-btn"> <img src="images/%choice%.png" width=250px></button>',
+      '<button class="jspsych-btn"> <img src="images/%choice%.png" style="width:250px"></button>',
   };
 ```
 
 Our actual selection trial requires quite a large block of code to generate it (see the big chunk of code above, where we create `selection_trial`), but this is all stuff you have seen before - an `audio-button-response trial`, where we add some stuff to the trial data `on_start`, and then work out which button the participant actually clicked `on_finish`, saving the trial data to the server using the `save_confederate_priming_data` function. 
 
-Finally, we stick our waiting trial and our picture selection trial together as a single trial consisting of just a timeline and returning that two-part trial.:
+Finally, we stick our waiting trial and our picture selection trial together as a single trial consisting of just a timeline and returning that two-part trial.
 
 ```js
 var full_trial = {timeline:[waiting_for_partner,selection_trial]};
 return full_trial
 ```
 
+Later on we will use this `make_picture_selection_trial` function to create picture selection trials to stick in the experiment timeline.
+
 ### Picture description trials
 
 
-Before we can do any audio recording we have to get the participant to grant us mic access, have them select which mic they use, and also set up a function for saving audio data - this is all in the code in the section "Infrastructure for recording audio", you can look there for the easy bits, I'll talk you through the `save_audio` function below.
+These involve the participant recording an audio description of a target image. Before we can do any audio recording we have to get the participant to grant us mic access, have them select which mic they use, and also set up a function for saving audio data. This is all in the code in the section "Infrastructure for recording audio", you can look there for the easy bits, I'll talk you through the `save_audio` function below.
 
+Once the audio stuff is set up we create our picture description trials - remember, for these the participant sees two images side by side, with the target highlighted by a green box, clicks a button to start recording a description, clicks again to stop recording, and then "waits for their partner to make a picture selection" based on their description (in reality, the participant just gets a waiting message and waits for a random time). This can be achieved with a 3-part timeline: the initial part of the trial where the participant sees the pair of images and clicks a button to start recording, then the second part where they speak and then click again to stop recording, then the random wait. 
 
-Next we create our picture description trials - remember, for these the participant sees two images side by side, with the target highlighted by a green box, clicks a button to start recording a description, clicks again to stop recording, and then "waits for their partner to make a picture selection" based on their description (in reality, the participant just gets a waiting message and waits for a random time). This can be achieved with a 3-part timeline: the initial part of the trial where the participant sees the pair of images and clicks a button to start recording, then the second part where they speak and then click again to stop recording, then the random wait. 
+That sounds reasonably straightforward, but we have a slight issue in that we want to show *two* images side by side. There are a couple of ways around this. We could write our own plugin that shows two images (but messing with plugins can be a little intimidating); we could make a whole bunch of image files that contain two images side by side (but given the number of images we have that will be a *huge* number of composite images!); or we can use another more flexible plugin with an html stimulus - that is my preferred option, which is convenient since the only audio response plugin currently implemented is `html-audio-response`! 
 
-That sounds reasonably straightforward, but we have a slight issue in that we want to show *two* images side by side. There are a couple of ways around this. We could write our own plugin that shows two images (but messing with plugins can be a little intimidating); we could make a whole bunch of image files that contain two images side by side (but given the number of images we have that will be a *huge* number of composite images!); or we can use another more flexible plugin with an html stimulus - this is convenient since the only audio response plugin currently implemented is `html-audio-response`! 
-
-In the end I went for the 3rd option: I use `html-audio-response` as my main plugin, since it allows the `stimulus` to be any html string, and since html can include images that means I can create an html stimulus that contains two images side by side. For example, if I want to show two images (imagine they are called them `image1.png` and `image2.png`) side by side in html then this will work:
+The `stimulus` for `html-audio-response` is an html string (obviously), and since html can include images that means I can create an html stimulus that contains two images side by side. For example, if I want to show two images (imagine they are called `image1.png` and `image2.png`) side by side in html then this will work:
 
 ```js
 var composite_image ="<img src=image1.png> <img src=image2.png>"; 
@@ -233,7 +234,7 @@ var composite_image ="<img src=image1.png style='border:5px solid green; width:2
 
 The extra stuff sets the image width (you have seen something similar before) and the border (it took me a while and quite a lot of googling and trial-and-error to figure that out).
 
-So that's how we get two images into an html stimulus. Our picture description trial therefore consists of two trials: an `html-button-response` trial and then an `html-audio-response` trial, both with the same stimulus, the composite side-by-side images. The first trial allows the participant to click to begin recording, then it moves to the `html-audio-response` trial which starts recording immediately. The reason I have the first trial in there is that I don't like the idea of recording without the participant doing something to start the recording, and I think the click-to-start, click-to-end set-up is reasonably intuitive. It actually looks a little bit jumpy on-screen - as mentioned above, the `html-audio-response` plugin is new and it's not formatted exactly the same as the `html-button-response` plugin (everything is slightly higher up the screen), so you can see the join between the two trials. Also, they haven't implemented the `prompt` for the `html-audio-response` plugin yet, so to get something prompt-like on screen in the same place on both trials I have to add that to the stimulus too. But these little glitches won;t make a huge difference to your experiment, and will no doubt be ironed out.
+So that's how we get two images into an html stimulus. Our picture description trial therefore consists of two trials: an `html-button-response` trial and then an `html-audio-response` trial, both with the same stimulus, the composite side-by-side images. The first trial allows the participant to click to begin recording, then it moves to the `html-audio-response` trial which starts recording immediately. The reason I have the first trial in there is that I don't like the idea of recording without the participant doing something to start the recording, and I think the click-to-start, click-to-end set-up is reasonably intuitive. It actually looks a little bit jumpy on-screen - as mentioned above, the `html-audio-response` plugin is new and it's not formatted exactly the same as the `html-button-response` plugin (everything is slightly higher up the screen), so you can see the join between the two trials. Also, they haven't implemented the `prompt` for the `html-audio-response` plugin yet, so to get something prompt-like on screen in the same place on both trials I have to add that to the stimulus too. But these little glitches won't make a huge difference to your experiment, and will no doubt be ironed out.
 
 Again, we write a function which builds this complex trial for us - we pass in the target image to be described plus the foil image, it returns the complex trial for us. The full code is here, I'll walk you through it below:
 
@@ -268,7 +269,7 @@ function make_picture_description_trial(target_image, foil_image) {
     type: jsPsychHtmlButtonResponse,
     stimulus: composite_image_with_prompt,
     choices: [
-      '<img src="images/mic.png" style="background-color:white; width:75px">',
+      '<img src="images/mic.png" style="background-color:white; width:75px">'
     ],
   };
   var record_audio = {
@@ -337,7 +338,7 @@ Now we have our target and foil images with the necessary formatting, we can shu
   var composite_image = shuffled_images[0] + shuffled_images[1];
 ```
 
-`shuffled_images[0]` takes whatever is the first thing in shuffled_images, so this will end up with either of the target or foil image (appropriately formatted) appearing on the left.
+`shuffled_images[0]` takes whatever is the first thing in `shuffled_images`, so this will end up with either of the target or foil image (appropriately formatted) appearing on the left.
 
 As mentioned above, we want something like a prompt, telling the participant what to do, but the `html-audio-response` plugin doesn't have a prompt, so we have to achieve the same sort of effect by adding the prompt to our composite html stimulus:
 
@@ -394,7 +395,7 @@ on_finish: function (data) {
 ```
  We add some info to the trial's data, including the fact that it's a picture description task with a particular target and foil image. We also want to save the data from this trial, which we do using `save_confederate_priming_data`. And we also save the audio generated by this trial, using the `save_audio` function defined elsewhere in the code - see below.
 
-Finally, we add the third sub-trial, a very simple waiting message using the random duration we generated earlier, and then build and return a trial with a nested timeline featuring our three trials (white mic, orange mic, waiting message):
+Finally, we add the third sub-trial, a very simple waiting message using the random duration we generated earlier, and then build and return a trial with a nested timeline featuring our three trials (white mic, record audio, waiting message):
 
 ```js
   var waiting_for_partner = {
@@ -407,7 +408,7 @@ Finally, we add the third sub-trial, a very simple waiting message using the ran
   var full_trial = {
     timeline: [
       picture_plus_white_mic,
-      picture_plus_orange_mic,
+      record_audio,
       waiting_for_partner,
     ],
   };
@@ -415,7 +416,7 @@ Finally, we add the third sub-trial, a very simple waiting message using the ran
 }
 ```
 
-The only other thing we have to explain is the `save_audio` function. The code is below - this is very similar to our save_data function in that it basically hands off the job of saving the data to a PHP script. But we have to tell the PHP script what file name we want to save the audio under. Here we are using the format id_index.wav, where id is the random `participant_id` we generated and index is the `trial_index` - every piece of trial data in jsPsych has an index (0 for the first trial in the experiment, e.g. the initial consent screen, 1 for the next trial, etc), and we write those trial indexes in our CSV file, so if we include the same index in the recording name we can work out which recording goes with which trial in our CSV. Here's the full `save_data` function - note that audio will be saved in `server_data/audio`.
+The only other thing we have to explain is the `save_audio` function. The code is below - this is very similar to our `save_data` function in that it basically hands off the job of saving the data to a PHP script. But we have to tell the PHP script what file name we want to save the audio under. Here we are using the format id_index.wav, where id is the random `participant_id` we generated and index is the `trial_index`. Every piece of trial data in jsPsych has an index (0 for the first trial in the experiment, e.g. the initial consent screen, 1 for the next trial, etc), and we write those trial indexes in our CSV file, so if we include the same index in the recording name we can work out which recording goes with which trial in our CSV. Here's the full `save_audio` function. One additional note is that audio will be saved in `server_data/audio/` by our `save_audio.php` script, so that's where you'll find it.
 
 ```js
 function save_audio(data) {
@@ -458,13 +459,13 @@ var interaction_trials = [
 ];
 ```
 
-We then combine `interaction_trials` with some information screens (including a detailed explanation for the participant on granting mic access) to produce the full experiment timeline.
+We then combine `interaction_trials` with some other trials (information screens, trials to handle mic set-up etc) to produce the full experiment timeline.
 
 ### A custom preload list
 
 As I mentioned in last week's practical, jsPsych's `preload` plugin will pre-load images and audio for certain trial types, which makes the experiment run more smoothly and ensures that images you think participants are seeing have actually been loaded and are displaying. In particular, the image in `image-button-response` trials and the audio in `audio-button-response` trials are preloaded automatically if you include a preload plugin and set `auto_preload: true`. However, that won't automatically preload images used as buttons in `audio-button-response` trials, which means our image buttons in picture selection trials will not be pre-loaded, and it doesn't preload anything for `html-button-response` or `html-audio-response` trials, so our fancy composite images won't be preloaded either. Fortunately the `preload` plugin allows you to specify an additional list of images to be preloaded, which we will use to preload these images. 
 
-While we could manually code up a preload list (boring) or just load *all* the images we might need (a bit naughty since we are probably wasting the participant's bandwidth!), it's possible to get the code to construct this custom preload list for us. You might have attempted this last week, where we played around with working through a trial list and identifying images to preload. This week we are actually taking a slightly different approach: every time we build a trial, we make a note of the images we will need to preload. So right near the top of the `confederate_priming.js` file you'll find:
+While we could manually code up a preload list (boring) or just load *all* the images we might conceivably need (a bit naughty since we are probably wasting the participant's bandwidth!), it's possible to get the code to construct this custom preload list for us. You might have attempted this last week, where we played around with working through a trial list and identifying images to preload. This week we are actually taking a slightly different approach: every time we build a trial, we make a note of the images we will need to preload. So right near the top of the `confederate_priming.js` file you'll find:
 
 ```js
 //initially our images_to_preload list contains only 1 image, the microphone!
@@ -509,7 +510,7 @@ var preload = {
 
 If you have run through our implementation you will have noticed that we ask participants if they are native speakers of English, and if they answer "No" they are kicked out of the experiment (or rather, directed to an un-escapable holding screen). We didn't actually do this in Loy & Smith (2021), but we wanted to show you that it was possible to do this kind of thing - if you do this for real, use it judiciously since participants may not like it, and make sure you provide more information for excluded participants on e.g. how they can get paid for any time they have spent on the experiment!
 
-The way we achieve this is by a conditional timeline ([see the jsPsych documentation](https://www.jspsych.org/7.0/overview/timeline/#conditional-timelines)). In a conditional timeline node you have a `timeline` which only runs if `conditional_function` evaluates to `true` - like this 
+The way we achieve this is by a conditional timeline ([see the jsPsych documentation](https://www.jspsych.org/7.0/overview/timeline/#conditional-timelines)). In a conditional timeline node you have a `timeline` which only runs if `conditional_function` evaluates to `true` - like this:
 
 ```js
 var conditional_node = {
@@ -575,7 +576,7 @@ var native_english_check = {
 };
 ```
 
-Here we are filtering people out based on their answer to a yes-no question, but you could do something similar based on their scores on a series of attention check trials or something. Just remember that you have to treat your participants fairly - if you rightly eject people who have spent substantial time on your experiment and don't give them an avenue to be reimbursed, they will rightly complain!
+Here we are filtering people out based on their answer to a yes-no question, but you could do something similar based on their scores on a series of attention check trials or something. Just remember that you have to treat your participants fairly - if you eject people who have spent substantial time on your experiment and don't give them an avenue to be reimbursed, they will rightly complain!
 
 ### Advanced: reading the trial list from a CSV file
 
@@ -635,22 +636,18 @@ Being able to specify your trial list ahead of time and save it as a CSV file ca
 
 ## Exercises with the confederate priming experiment code
 
-**UP TO HERE**
-
 Attempt these problems. Once you have had a go, you can [look at our notes](oels_practical_wk9_notes.md) which will be available after class.
 - Run the basic `conferedate_priming.html` experiment and look at the CSV and audio data files it creates. Check you can access the audio, and that you can see how the audio and the trial list link up - how do you know which audio corresponds to which trial in the CSV?
 - Run it again and see where the data from the second run is stored - you may need to refresh your cyberduck window with the refresh button.
 - The short trial list I built in `conferedate_priming.js` is for an overspecific confederate. How would you modify that trial list to simulate a minimally-specific confederate?
 - Now try running the `conferedate_priming_readfromcsv.html` experiment - you don't have to work through the whole experiment, just a few trials! Again, check you can see your data on the server.
 - For this version of the experiment, how do you switch from an overspecific to minimally-specific confederate? (Hint: this involves changing the name of the file used by the `read_trials_and_prepare_timeline` function in the very last line of the code).
-- Building on the previous question: how would you randomly allocate a participant to one of these two conditions, overspecific or minimally specific? Once you have attempted this, you can look at [my thoughts on how it could be done](oels_practical_wk9_extended.md) (which also covers the harder question later on). 
+- [Harder] Building on the previous question: how would you randomly allocate a participant to one of these two conditions, overspecific or minimally specific? Once you have attempted this, you can look at [my thoughts on how it could be done](oels_practical_wk9_extended.md) (which also covers the harder question later on). 
 - For either of these experiments, figure out how to disable image preloading for the button images and re-run the experiment. Can you see the difference? If it works smoothly, try running the experiment in Chrome in Incognito mode, which prevents your browser saving images etc for you. Can you see the difference now?
 - [Harder, optional] Can you change the `random_wait` function so it generates longer waits early in the experiment and shorter waits later on? Once you have attempted this, you can look at [my thoughts on how it could be done](oels_practical_wk9_extended.md).
 
 
 ## References
-
-[Loy, J. E., & Smith, K. (2020). Syntactic adaptation depends on perceived linguistic knowledge: Native English speakers differentially adapt to native and non-native confederates in dialogue. https://doi.org/10.31234/osf.io/pu2qa.](https://doi.org/10.31234/osf.io/pu2qa)
 
 - [Loy, J. E., & Smith, K. (2021). Speakers Align With Their Partner's Overspecification During Interaction. *Cognitive Science, 45,* e13065.](https://doi.org/10.1111/cogs.13065)
 

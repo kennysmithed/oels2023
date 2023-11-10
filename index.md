@@ -132,7 +132,7 @@ No lecture or lab in week 11, but there are some materials that will be useful f
 
 - *Scientific content:* least effort and Zipf's Law of Abbreviation
 - *Technical content:* web sockets, python servers, incrementally building a timeline
-- [Reading](oels_reading_wkna.md)
+- [Reading from last year's version of the course](https://kennysmithed.github.io/oels2022/oels_reading_wk10.html)
 - [Programming task from last year's version of the course](https://kennysmithed.github.io/oels2022/oels_practical_wk10.html)
 
 ### Bonus content
@@ -143,17 +143,15 @@ I am sticking some extra documented experiments I have created here, in case the
 - [Semantic extension experiment](https://github.com/kennysmithed/SemanticExtension). This is a more complex experiment looking at how participants extend the meaning of novel signals in a communication game. It is based on the dyadic interaction code from week 10, but includes additional machinery to deal with a wider range of participant drop-outs, has on-screen trial counters, a warm-up with catch trials.
 - [Custom html-button-response plugin with buttons laid out in a grid](https://github.com/aislinnkeogh/custom-jspysch-plugins/blob/main/plugin-html-button-response-grid.js), written by Aislinn Keogh - uses an html table to do that, the plugin provides 2 additional parameters, `rows` and `columns`, e.g. for a 3 row, 2 column grid you'd do ```{type: jsPsychHtmlButtonResponseGrid, rows: 3, columns: 2, choices: [6 choices here]}```
 
-### Additional drop-in labs
+### Additional drop-in labs for coding help with the final assignment
 
-Aislinn will be available on Teams in weeks 1-3 at the times listed below to do a short drop-in lab to catch people who joined the course late and missed the lab, or need a bit of extra support in the early stages of the course. See the course Learn page for instructions on how to access the drop-in labs on Teams. Note that these are not compulsory, and they are drop-ins not extra labs - the idea is that you come along, ask a couple of questions, then go away.
+We will provide some extra drop-in labs to give you an opportunity to get some help with your final assignment code. Obviously we won’t write your code for you, but if you are having trouble interpreting an error message or finding a bug or want some tips on how to achieve a particular effect we can help you figure it out. Note that these are not compulsory, and they are drop-ins not extra labs - the idea is that you come along, ask a couple of questions, then go away. These are available at the following times and locations - if they are listed as available online, see the course Learn page for instructions on how to access the drop-in labs on Teams. 
 
-Aislinn will be available on Teams:
-- Thursday 21st September, 2pm-3pm
-- ~~Thursday 28th September, 2pm-3pm~~ Cancelled due to strikes
-- Thursday 5th October, 2pm-3pm
-
-We will provide some extra drop-in labs to give you an opportunity to get some help with your code for the final assignment. Obviously we won't write your code for you, but if you are having trouble interpreting an error message or finding a bug or want some tips on how to achieve a particular effect we can help you figure it out. Note that these are not compulsory, and they are drop-ins not extra labs - the idea is that you come along, ask a couple of questions, then go away. Dates and times TBC, but these will begin roughly 2 weeks before the final assessment is due.
-
+- Monday 27th November, 2pm-3.45pm, DSB 3.01, with Kenny.
+- Thursday 30th November, 9am-11am, Appleton Tower room 4.02 (i.e. usual time and place), with Aislinn, Vilde & Maisy.
+- Friday 1st December, 2pm-4pm, DSB 6.01 and online, with Aislinn. 
+- Monday 4th December, time and venue TBC, with Maisy.
+- Tuesday 5th December, time and venue TBC, with Vilde.
 
 ## Re-use
 
