@@ -110,7 +110,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - *Technical content:*  Audio recording, custom preload lists, conditional timelines, reading trial lists from CSV
 - [Reading](oels_reading_wk9.md)
 - [Programming task](oels_practical_wk9.md)
-- Lecture slides to appear here
+- [Lecture slides](slides/oels_lecture_wk9.pdf)
 
 ### Week 10 (20th November): Iterated Learning
 
