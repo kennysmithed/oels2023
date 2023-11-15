@@ -117,7 +117,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - *Scientific content:* iterated learning and the evolution of compositional structure
 - *Technical content:* looping trials, reading trial lists from CSVs again, PHP scripts for iteration
 - [Reading](oels_reading_wk10.md)
-- Programming task to appear here
+- [Programming task](oels_practical_wk10.md)
 - Lecture slides to appear here
 
 ### Week 11 (27th November): Interacting with MTurk

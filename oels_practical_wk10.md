@@ -10,7 +10,7 @@ This week we are going to look at code for an iterated learning experiment, a si
 In terms of the trial types we need to present to participants, this experiment is actually very simple, and uses elements of the code we developed in the practicals on word learning and perceptual learning.
 
 - Participants go through an initial observation phase where they are exposed to objects paired with labels/descriptions. This is basically identical to the observation phase of the word learning experiment in `word_learning.js`.
-- In the final test, where participants try to reproduce the language they are trained on, on each trial participants are presented with an object and asked to produce a label/description for it. Beckner et al. used a free-typing production method, where people type stuff in. In some recent work with online iterated learning we (my RA Clem Ashton and I) switched to a more constrained production model: participants are provided with a set of syllable options, and build complex labels by clicking on those syllable buttons. This reduces or removes the problem of participants typing English (e.g. "don't know", "no idea") or near-English versions of random labels (e.g. "vukano" -> "volcano"), which we were getting a lot of with free-typed responses on MTurk. We can achieve this by using the machinery for looping trials that jsPsych provides, looping a single `image-button-response` to allow a participant to click multiple times to build a label; in order to show that label on-screen where we want it, we'll actually use a customised version of `image-button-response` that has the prompt above the buttons rather than below. 
+- In the final test, where participants try to reproduce the language they are trained on, on each trial participants are presented with an object and asked to produce a label/description for it. Beckner et al. used a free-typing production method, where people type stuff in. In some recent work with online iterated learning we (my RA Clem Ashton and I) switched to a more constrained production model: participants are provided with a set of syllable options, and build complex labels by clicking on those syllable buttons. This reduces or removes the problem of participants typing English (e.g. "don't know", "no idea") or nearby English equivalents of random labels (e.g. "vukano" -> "volcano"), which we were getting a lot of with free-typed responses on MTurk. We can achieve this by using the machinery for looping trials that jsPsych provides, looping a single `image-button-response` to allow a participant to click multiple times to build a label; in order to show that label on-screen where we want it, we'll actually use a customised version of the `image-button-response` plugin that has the prompt above the buttons rather than below. 
 
 The complication this week is that rather than pre-specifying the language participants have to learn, we are running an *iterated learning* design: the language produced by one participant in the production phase becomes the input language to another participant in the observation phase, allowing us to pass the language from person to person and watch it evolve. Participants are organised in *chains*, where the participant at generation *n* in a particular chain learns from the language produced by the generation *n-1* participant in that chain.
 
@@ -33,12 +33,12 @@ You need a bunch of files for this experiment - some html and js files, some ima
 
 This code won't work on your local computer, it needs to be on the jspsychlearning server - so once you have extracted the zip file, you need to upload the whole `iterated_learning` folder to your `public_html` folder on the jspsychlearning server, alongside your various other experiment folders.
 
-Finally, we need to set up some stuff in your `server_data` folder. Managing this iterated learning experiment means we need to keep track of several things. First, we want to record participant data trial-by-trial as it comes in, just like we always do. But we also need to keep track of which chains are available to iterate, which chains are currently being worked on by a participant, and which generations of which chains are completed and don't need to be messed with any more. We are going to manage that stuff by moving files from folder to folder in `server_data`, so we need to set up those directories, and also drop in some starting languages to initialise our chains.
+Finally, we need to set up some stuff in your `server_data` folder. Managing this iterated learning experiment means we need to keep track of several things. First, we want to record participant data trial-by-trial as it comes in, just like we always do. But we also need to keep track of which chains are available to iterate, which chains are currently being worked on by a participant, and which generations of which chains are completed and don't need to be messed with any more. We are going to manage that by moving files from folder to folder in `server_data`, so we need to set up those directories, and also drop in some starting languages to initialise our chains.
 
 To do that, navigate into your `server_data` folder on cyberduck. You need to make sure that the folders you are creating inherit their access permissions etc from the main `server_data` folder, which you do by getting right into that folder on cyberduck before creating any new folders. Double-click the `server_data` folder so your navigation bar in cyberduck looks something like this (but with your UUN rather than mine obviously)
 ![cyberduck in server_data](images/create_audio_folder.png)
 
-Once you are there, create a new folder (Action ... New folder in cyberduck) and call that folder `il` (short for iterated learning). Then double-click to enter the `il` folder, and create *four* new folders in there, called `ready_to_iterate`, `undergoing_iteration`, `completed_iteration` and `participant_data`. Here's what my server_data folder looks like after that step - you can see the `il` directory with the 4 sub-directories. Note that you have to get the folder names exactly right, otherwise the code won't be able to find the stuff it needs.
+Once you are there, create a new folder (Action ... New folder in cyberduck) and call that folder `il` (short for iterated learning). Then double-click to enter the `il` folder, and create *four* new folders in there, called `ready_to_iterate`, `undergoing_iteration`, `completed_iteration` and `participant_data`. Here's what my server_data folder looks like after that step - you can see the `il` directory with the 4 sub-directories. Note that you have to get the folder names exactly right, otherwise the code won't be able to find the files it needs.
 
 ![il directory structure](images/il_detailed_directory_structure.png)
 
@@ -56,14 +56,14 @@ If you run through our implementation of the experiment you'll see that the expe
 
 ## You build (some of) it, if you want
 
-We are getting pretty advanced now, so I don't expect you to be able to implement this experiment from scratch yourself! But if you want to have a go at coding up the observation trials, or thinking about how you can do some kind of production trial, go for it. But if you just want to see how we did it, and attempt the exercises at the end, that's OK too.
+We are getting pretty advanced now, so I don't expect you to be able to implement this experiment from scratch yourself! But if you want to have a go at coding up the observation trials, or thinking about how you can do some kind of production trial using plugins you are familiar with, go for it. But if you just want to see how we did it, and attempt the exercises at the end, that's OK too.
 
 ## Our implementation
 
 ### Managing an iterated learning experiment via PHP scripts
 
 In an iterated learning experiment, one participant's output becomes the input for another participant. Participants are organised in chains, and you'll typically have several chains open at once ("open" means that you need to add more participants to those chains to get them to the desired number of generations). There are three main kinds of events you have to handle:
-1. When a new participant starts the experiment, you have to allocate them to an open chain (or deal with them some other way if there are no chains open), and avoid allocating any other new participants to the same chain until they are finished (i.e. there's no point in having two participants both competing to be generation 3 of chain 2 or whatever).
+1. When a new participant starts the experiment, you have to allocate them to an open chain (or deal with them some other way if there are no chains open), and avoid allocating any other new participants to the same chain until they are finished (i.e. there's no point in having two participants both competing to be generation 3 of chain 2).
 2. When a participant completes the experiment, you need to make their output language available as the input language for the next participant in their chain.
 3. If a participant drops out (which happens *a lot* online) you need to recycle the chain that was allocated to them, making it available to another participant.
 
@@ -119,7 +119,7 @@ Our `save_iterated_learning_data` function (which is the next bit in the code) t
 
 ### Calling PHP scripts to do various things with input language files
 
-There's a separate javascript file, `manage_language_files.js`, that sets out 4 functions which do all our manipulation of language CSV files for us. You need to know roughly what they do to understand the rest of the code, but you don't have to know the details (unless you want to, in which case you can look at the code and comments in `manage_language_files.js`). The first two functions, `list_input_languages` and `read_input_language`, have the same structure - they use `fetch` to run a PHP script on the server, and then receive back a response from the PHP script, which they do a little formatting on (to turn the data into something we can work with). Because these functions interact with a PHP script which is reading data files on the server, we have to set them up as `async` (asynchronous) functions, and tell them to `await` the response from the PHP server before doing anything. I mentioned this async/await stuff briefly at the end of the confederate priming practical, but to recap: fetching data from the server via PHP takes some time - only a fraction of a second, so it appears instantaneous to us, but for the computer this is very slow. Rather than wait for the `fetch` command to finish, your browser tries to press on and run the rest of the code - if you are familiar with 'normal' programming languages like python, that run things one step at a time, this is a very weird behaviour that takes some time to get used to! In this particular case, trying to carry on while the `fetch` function goes off and does its job is a bad idea, since we actually need to get the response back from the PHP script before we can continue - running off ahead before the `fetch` returns the data we need will cause our code to break, because until the `fetch` command returns its data we can't actually process it!
+There's a separate javascript file, `manage_language_files.js`, that sets out 4 functions which do all our manipulation of language CSV files for us. You need to know roughly what they do to understand the rest of the code, but you don't have to know the details (unless you want to, in which case you can look at the code and comments in `manage_language_files.js`). The first two functions, `list_input_languages` and `read_input_language`, have the same structure - they use `fetch` to run a PHP script on the server, and then receive back a response from the PHP script, which they do a little formatting on (to turn the data into something we can work with). Because these functions interact with a PHP script which is reading data files on the server, we have to set them up as `async` (asynchronous) functions, and tell them to `await` the response from the PHP server before doing anything. I mentioned this async/await stuff briefly at the end of the confederate priming practical last week, but to recap: fetching data from the server via PHP takes some time - only a fraction of a second, so it appears instantaneous to us, but for the computer this is very slow. Rather than wait for the `fetch` command to finish, your browser tries to press on and run the rest of the code - if you are familiar with 'normal' programming languages like python, that run things one step at a time, this is a very weird behaviour that takes some time to get used to! In this particular case, trying to carry on while the `fetch` function goes off and does its job is a bad idea, since we actually need to get the response back from the PHP script before we can continue - running off ahead before the `fetch` returns the data we need will cause our code to break, because until the `fetch` command returns its data we can't actually process it!
 
 There are various solutions to this problem, but I think the simplest one is to use the `async` and `await` functions (which are part of newer versions of javascript). This allows us to declare some functions as `async` (i.e. asynchronous, in other words there are some steps that involve waiting for one function to complete before proceeding, rather than running everything synchronously/simultaneously), and then use `await` to tell the browser to wait for a certain operation to complete before moving on. This means we can wait until the `fetch` command has done its job and got the data we need.
 
@@ -127,9 +127,9 @@ If we call `list_input_languages()` what eventually gets returned is a list of t
 ```js
 [
   {object:'images/o1_cB_n1.png',label:'visivu'},
-{object:'images/o1_cB_n2.png',label:'kotisu'},
-{object:'images/o1_cB_n3.png',label:'vovaso'},
-{object:'images/o2_cB_n1.png',label:'kukati'}
+  {object:'images/o1_cB_n2.png',label:'kotisu'},
+  {object:'images/o1_cB_n3.png',label:'vovaso'},
+  {object:'images/o2_cB_n1.png',label:'kukati'}
 ]
 ```
 We can then use this list of object-label pairs to build training and testing timelines.
@@ -279,7 +279,7 @@ We can solve all these problems by creating a new variable, `building_label`, wh
 var building_label = [];
 ```
 
-But every time the participant clicks on a syllable, we will add that syllable to the building label using push - so if the participant clicks "ti" then "vu" the building label will be:
+But every time the participant clicks on a syllable, we will add that syllable to the building label using `push` - so if the participant clicks "ti" then "vu" the building label will be:
 ```js
 ["ti", "vu"]
 ```
@@ -538,14 +538,14 @@ The final line of the code simply runs this `run_experiment()` function, startin
 
 ## Exercises with the iterated learning experiment code
 
-As usual, try these yourself, and once you have had a go, you can [look at our notes](oels_practical_wk9_notes.md).
+As usual, try these yourself, and once you have had a go, you can [look at our notes](oels_practical_wk9_notes.md), which will be available after the lab.
 
 - **After setting up the various folders in `server_data`**, run the experiment and use cyberduck to watch the CSV files appearing and moving around in `server_data/il` - remember you will need to click refresh in cyberduck regularly to see what's happening. Experiment with abandoning the experiment part-way through (i.e. closing the browser window) and see what happens. Look at the CSV data files that get created in various places, and check that the contents of the data files make sense and how they relate to what you see as a participant. Try to run a few generations of at least one chain and check that the iteration process works as you expect.
 - How would you increase the number of training trials in the observation phase of the experiment to provide e.g. 6 passes through the training set? How would you increase or decrease the size of the transmission bottleneck?
 - How would you randomise the order of the syllables on production trials separately for every production trial? Do you think that is better or worse? How about if you don't randomise them at all? Have a think about the possible consequences of these various randomisation choices.
-- [Harder, optional] How could you insert a small number of test trials after each block of training trials, to keep the participant focussed on the task? [You can check my model answer once you have tried this yourself.](oels_practical_wk9_extended.md)
-- [Harder, optional] Can you add a maximum generation number, so no chain goes beyond e.g. 10 generations? [You can check my model answer once you have tried this yourself.](oels_practical_wk9_extended.md)
-- [Very hard, very optional] Can you implement a deduplication filter like that used by Beckner et al., to avoid presenting participants with ambiguous duplicate labels (where two distinct pictures map to the same label)? [You can check my model answer once you have tried this yourself.](oels_practical_wk9_extended.md)
+- [Harder, optional] How could you insert a small number of test trials after each block of training trials, to keep the participant focussed on the task? [You can check my model answer once you have tried this yourself.](oels_practical_wk10_extended.md)
+- [Harder, optional] Can you add a maximum generation number, so no chain goes beyond e.g. 10 generations? [You can check my model answer once you have tried this yourself.](oels_practical_wk10_extended.md)
+- [Very hard, very optional] Can you implement a deduplication filter like that used by Beckner et al., to avoid presenting participants with ambiguous duplicate labels (where two distinct pictures map to the same label)? [You can check my model answer once you have tried this yourself.](oels_practical_wk10_extended.md)
 
 ## References
 
