@@ -118,7 +118,7 @@ In week 5 there is no lecture, but we have a lab as usual - use this time to cat
 - *Technical content:* looping trials, reading trial lists from CSVs again, PHP scripts for iteration
 - [Reading](oels_reading_wk10.md)
 - [Programming task](oels_practical_wk10.md)
-- Lecture slides to appear here
+- [Lecture slides](slides/oels_lecture_wk10.pdf)
 
 ### Week 11 (27th November): Interacting with MTurk
 
