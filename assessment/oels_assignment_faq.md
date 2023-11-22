@@ -64,6 +64,10 @@ No it doesn't - we don't want to penalise you for reading and citing lots of rel
 
 Yes it does - I never want to read 5000 words of footnotes.
 
+## You tell us to include a URL for our jspsychlearning-hosted experiment at the top of the report - doesn't that de-anonymise us?
+
+In principle we could use this to figure out who you are, but we will not do this. The logistics of setting up extra anonymous accounts is too complex and not worth the effort given that we have no interest in de-anonymising these! The thing we mostly want to avoid is people putting their actual name on their assignment, which happens more than you might think. So don't do that.
+
 ## Re-use
 
 All aspects of this work are licensed under a [Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/).
