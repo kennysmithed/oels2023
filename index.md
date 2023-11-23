@@ -150,7 +150,7 @@ We will provide some extra drop-in labs to give you an opportunity to get some h
 - Monday 27th November, 2pm-3.45pm, DSB 3.01, with Kenny.
 - Thursday 30th November, 9am-11am, Appleton Tower room 4.02 (i.e. usual time and place), with Aislinn, Vilde & Maisy.
 - Friday 1st December, 2pm-4pm, DSB 6.01 and online, with Aislinn. 
-- Monday 4th December, time and venue TBC, with Maisy.
+- Monday 4th December, 2pm-4pm, DSB 4.01, with Maisy.
 - Tuesday 5th December, 10am-11am, DSB 4.01, with Vilde.
 
 ## Re-use
